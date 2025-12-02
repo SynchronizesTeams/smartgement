@@ -1,0 +1,27 @@
+# Core Framework
+fastapi
+uvicorn[standard]
+
+# Database
+sqlalchemy
+pydantic-settings
+
+# Vector Database
+qdrant-client
+
+# LLM & Embeddings
+openai
+
+# Data Processing & Analytics
+pandas
+numpy
+python-dateutil
+
+# Utilities
+python-dotenv
+httpx
+
+# Testing
+pytest
+pytest-asyncio
+httpx  # for testing async endpoints

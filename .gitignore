@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual env
+.venv/
+venv/
+
+# Environment variables
+.env
+
+# Databases
+*.db
+*.sqlite
+
+# Node modules (frontend)
+node_modules/
+
+# Other
+.DS_Store
+QDRANT_SETUP.md
