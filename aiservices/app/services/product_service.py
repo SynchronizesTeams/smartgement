@@ -6,7 +6,6 @@ from app.schemas.product import ProductCreate, ProductUpdate
 from app.services.qdrant_setup import client, create_collection_if_not_exists
 from app.services.llm_client import get_embedding
 
-
 async def create_product(db: Session, product: ProductCreate) -> Product:
     """Create a new product and index it in Qdrant"""
     # Create product in database
@@ -23,33 +22,43 @@ async def create_product(db: Session, product: ProductCreate) -> Product:
     db.add(db_product)
     db.commit()
     db.refresh(db_product)
-    
+
     # Create embedding and store in Qdrant
-    if product.description:
+    if product.description or product.ingredients:
         collection_name = f"merchant_{product.merchant_id}"
         create_collection_if_not_exists(collection_name)
-        
-        # Generate embedding from product name + description + ingredients
-        text_to_embed = f"{product.name}. {product.description or ''}. Ingredients: {product.ingredients or ''}"
+
+        # Build embedding text
+        text_to_embed = (
+            f"{product.name}. "
+            f"{product.description or ''}. "
+            f"Ingredients: {product.ingredients or ''}"
+        )
+
         embedding = await get_embedding(text_to_embed)
-        
-        # Store in Qdrant
+
+        object_id = f"prod-{db_product.id}"
+
+        payload = {
+            "merchant_id": product.merchant_id,
+            "object_type": "product",
+            "object_id": object_id,
+            "text": text_to_embed,
+            "name": product.name,
+            "description": product.description,
+            "ingredients": product.ingredients,
+            "category": product.category
+        }
+
         client.upsert(
             collection_name=collection_name,
             points=[{
-                "id": db_product.id,
+                "id": object_id,  # IMPORTANT: keep ID as string
                 "vector": embedding,
-                "payload": {
-                    "product_id": db_product.id,
-                    "merchant_id": product.merchant_id,
-                    "name": product.name,
-                    "description": product.description,
-                    "ingredients": product.ingredients,
-                    "category": product.category
-                }
+                "payload": payload
             }]
         )
-    
+
     return db_product
 
 
