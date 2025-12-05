@@ -101,7 +101,15 @@ POST /products/search
   "query": "produk yang mengandung tepung",
   "limit": 10
 }
+  "limit": 10
+}
 ```
+
+**Get Raw Qdrant Data**
+```bash
+GET /products/qdrant?merchant_id=merchant_001&skip=0&limit=10
+```
+Returns raw payload data directly from Qdrant collection.
 
 ### Trend Analysis
 

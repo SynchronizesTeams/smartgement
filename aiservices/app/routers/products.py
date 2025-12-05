@@ -6,6 +6,7 @@ from app.schemas.product import (
     ProductCreate, ProductUpdate, ProductResponse,
     SemanticSearchRequest, SemanticSearchResponse
 )
+from qdrant_client.models import Filter, FieldCondition, MatchValue
 from app.services import product_service
 
 router = APIRouter()
@@ -29,13 +30,60 @@ def get_products(
     return product_service.get_products(db, merchant_id, skip, limit, category)
 
 
-@router.get("/{product_id}", response_model=ProductResponse)
-def get_product(product_id: int, db: Session = Depends(get_db)):
-    """Get a single product by ID"""
-    product = product_service.get_product(db, product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    return product
+
+@router.get("/qdrant", response_model=dict)
+async def get_products_from_qdrant(
+    merchant_id: str,
+    skip: int = 0,
+    limit: int = 10
+):
+    """
+    Get products directly from Qdrant for a specific merchant.
+    Returns the raw payload from the vector database.
+    """
+    from app.services.qdrant_setup import client
+    
+    collection = f"merchant_{merchant_id}"
+
+    # tambahkan filter object_type=product
+    qdrant_filter = Filter(
+        must=[
+            FieldCondition(
+                key="merchant_id",
+                match=MatchValue(value=merchant_id)
+            ),
+            FieldCondition(
+                key="object_type",
+                match=MatchValue(value="product")
+            )
+        ]
+    )
+
+    try:
+        # gunakan scroll untuk pagination data list
+        points, next_page = client.scroll(
+            collection_name=collection,
+            scroll_filter=qdrant_filter,
+            limit=limit,
+            offset=skip,
+            with_payload=True,
+            with_vectors=False
+        )
+
+        # hanya ambil payload JSON
+        results = [p.payload for p in points]
+
+        return {
+            "data": results,
+            "next_offset": next_page
+        }
+    except Exception as e:
+        # Handle case where collection might not exist
+        return {
+            "data": [],
+            "next_offset": None,
+            "message": str(e)
+        }
 
 
 @router.put("/{product_id}", response_model=ProductResponse)

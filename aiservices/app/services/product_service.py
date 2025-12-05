@@ -8,7 +8,6 @@ from app.services.llm_client import get_embedding
 
 async def create_product(db: Session, product: ProductCreate) -> Product:
     """Create a new product and index it in Qdrant"""
-    # Create product in database
     db_product = Product(
         merchant_id=product.merchant_id,
         name=product.name,
@@ -37,7 +36,7 @@ async def create_product(db: Session, product: ProductCreate) -> Product:
 
         embedding = await get_embedding(text_to_embed)
 
-        object_id = f"prod-{db_product.id}"
+        object_id = db_product.id
 
         payload = {
             "merchant_id": product.merchant_id,
@@ -53,7 +52,7 @@ async def create_product(db: Session, product: ProductCreate) -> Product:
         client.upsert(
             collection_name=collection_name,
             points=[{
-                "id": object_id,  # IMPORTANT: keep ID as string
+                "id": object_id,
                 "vector": embedding,
                 "payload": payload
             }]

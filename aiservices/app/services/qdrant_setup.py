@@ -48,24 +48,33 @@ def create_merchant_collection(merchant_id: str) -> Dict:
         "merchant_id": merchant_id
     }
 
-
 def get_collection_info(merchant_id: str) -> Optional[Dict]:
-    """Get information about a merchant's collection"""
     collection_name = get_collection_name(merchant_id)
-    
+
     try:
-        collection_info = client.get_collection(collection_name)
+        col = client.get_collection(collection_name)
+        params = col.config.params
+
+        # support single & multi vectors config
+        if hasattr(params.vectors, "size"):
+            vector_size = params.vectors.size
+            distance = params.vectors.distance
+        else:
+            v_name, v_conf = list(params.vectors.items())[0]
+            vector_size = v_conf.size
+            distance = v_conf.distance
+
         return {
             "collection_name": collection_name,
             "merchant_id": merchant_id,
-            "vectors_count": collection_info.vectors_count,
-            "points_count": collection_info.points_count,
-            "status": collection_info.status,
+            "points_count": getattr(col.status, "points_count", None),
+            "status": col.status,
             "config": {
-                "size": collection_info.config.params.vectors.size,
-                "distance": collection_info.config.params.vectors.distance
+                "size": vector_size,
+                "distance": distance
             }
         }
+
     except Exception as e:
         logger.error(f"Error getting collection info for {collection_name}: {e}")
         return None
@@ -204,24 +213,35 @@ def search_vectors(
         logger.error(f"Error searching {collection_name}: {e}")
         return []
 
-
 def delete_collection(merchant_id: str) -> Dict:
     """Delete a merchant's collection"""
     collection_name = get_collection_name(merchant_id)
-    
+
     try:
+        # Check first if exists
+        if not client.collection_exists(collection_name):
+            return {
+                "success": False,
+                "collection_name": collection_name,
+                "message": f"Collection {collection_name} does not exist"
+            }
+
+        # If exists → delete
         client.delete_collection(collection_name)
+
         return {
             "success": True,
             "collection_name": collection_name,
             "message": f"Collection {collection_name} deleted successfully"
         }
+
     except Exception as e:
         logger.error(f"Error deleting {collection_name}: {e}")
         return {
             "success": False,
             "error": str(e)
         }
+
 
 
 def validate_collection(merchant_id: str) -> Dict:
