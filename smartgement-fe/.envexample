@@ -1,3 +1,4 @@
 NUXT_PUBLIC_API_BASE=http://localhost:8080/api
 NUXT_PUBLIC_AI_BASE=http://localhost:8000
 RECAPTCHA_SITE_KEY=your-recaptcha-site-key
+RECAPTCHA_SECRET=your-recaptcha-secret
