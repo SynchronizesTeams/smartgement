@@ -43,6 +43,18 @@ def get_products(
     return query.offset(skip).limit(limit).all()
 
 
+def get_product_by_id(
+    db: Session,
+    product_id: int,
+    merchant_id: int
+) -> Optional[Product]:
+    """Get a single product by ID for a specific merchant (ensures isolation)"""
+    return db.query(Product).filter(
+        Product.id == product_id,
+        Product.merchant_id == merchant_id
+    ).first()
+
+
 async def update_product(
     db: Session, 
     product_id: int, 

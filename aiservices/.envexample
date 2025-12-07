@@ -1,0 +1,8 @@
+OPENAI_API_KEY=apikeyhere
+OPENAI_API_BASE=https://api.openai.com/v1
+merchant_id=0
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=db name here

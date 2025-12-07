@@ -1,22 +1,30 @@
+import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# MySQL connection - hardcoded for local development
-# Database: smartgement, User: root, No password
-DATABASE_URL = "mysql+pymysql://root:himro3344@127.0.0.1:3306/smartgement"
+load_dotenv()
 
-# Create SQLAlchemy engine
+# Read DB config from environment variables
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "3306")
+DB_NAME = os.getenv("DB_NAME")
+
+# Construct database URL
+DATABASE_URL = (
+    f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+)
+
+# Create engine
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
-# Session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Base class for all models
 Base = declarative_base()
 
 
 def get_db():
-    """Dependency for getting database session"""
     db = SessionLocal()
     try:
         yield db
@@ -25,5 +33,4 @@ def get_db():
 
 
 def init_db():
-    """Initialize database tables"""
     Base.metadata.create_all(bind=engine)

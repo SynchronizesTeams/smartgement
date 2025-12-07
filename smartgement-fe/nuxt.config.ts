@@ -24,9 +24,9 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || "http://localhost:8080/api",
-      aiBase: process.env.NUXT_PUBLIC_AI_BASE || "http://localhost:8000",
-      recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY || "",
+      apiBase: process.env.NUXT_PUBLIC_API_BASE,
+      aiBase: process.env.NUXT_PUBLIC_AI_BASE,
+      recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY,
     },
   },
 });
