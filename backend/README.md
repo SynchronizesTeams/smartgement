@@ -100,23 +100,8 @@ backend/
    cp .env.example .env
    ```
    
-   Edit `.env` with your **Supabase credentials**:
-   ```env
-   # Get these from your Supabase project dashboard
-   SUPABASE_PROJECT_URL=https://your-project-ref.supabase.co
-   SUPABASE_API_KEY=your-supabase-anon-key
-   SUPABASE_DB_URL=postgresql://postgres:[YOUR-PASSWORD]@db.your-project-ref.supabase.co:5432/postgres
-   
-   JWT_SECRET=yourSecretKey
-   QDRANT_URL=http://localhost:6333
-   PORT=3000
+   Edit `.env`
    ```
-
-   **Where to find Supabase credentials:**
-   - Go to your Supabase project dashboard
-   - **Project URL**: Settings → API → Project URL
-   - **API Key**: Settings → API → anon/public key
-   - **Database URL**: Settings → Database → Connection String → URI
 
 3. **Install dependencies** (already done during setup):
    ```bash
