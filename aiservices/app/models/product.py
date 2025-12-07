@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Text, ForeignKey, Date, JSON
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.mysql import INTEGER
+from sqlalchemy.dialects.mysql import INTEGER, BIGINT
 from datetime import datetime
 from app.database import Base
 
@@ -11,7 +11,7 @@ class Product(Base):
     __table_args__ = {'extend_existing': True}
     
     # Use MySQL specific INTEGER(unsigned=True) to match Go's uint
-    id = Column(INTEGER(unsigned=True), primary_key=True, index=True)
+    id = Column(BIGINT(unsigned=True), primary_key=True, index=True)
     merchant_id = Column(INTEGER(unsigned=True), index=True, nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text)
@@ -36,7 +36,7 @@ class ProductTrend(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     # Match unsigned int from Product
-    product_id = Column(INTEGER(unsigned=True), ForeignKey("products.id"), nullable=False)
+    product_id = Column(BIGINT(unsigned=True), ForeignKey("products.id"), nullable=False)
     date = Column(Date, nullable=False, index=True)
     
     # Sales metrics
@@ -60,7 +60,7 @@ class ProductRisk(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     # Match unsigned int from Product
-    product_id = Column(INTEGER(unsigned=True), ForeignKey("products.id"), nullable=False)
+    product_id = Column(BIGINT(unsigned=True), ForeignKey("products.id"), nullable=False)
     
     # Risk information
     risk_type = Column(String(50), nullable=False)
