@@ -213,15 +213,8 @@ MySQL Database
 
 ## 🎯 Key Features Explained
 
-### 1. Database-First Approach
 
-Kami prioritaskan MySQL untuk semua query produk:
-- ✅ Priority 1: Name search (ILIKE)
-- ✅ Priority 2: Ingredient search
-- ✅ Priority 3: Description search
-- ❌ Qdrant removed (no longer needed)
-
-### 2. Conversation Memory
+### 1. Conversation Memory
 
 Chatbot ingat 7 pesan terakhir:
 ```typescript
@@ -230,7 +223,7 @@ conversationHistory = messages.slice(-8, -1)
 
 Benefit: Follow-up questions work naturally.
 
-### 3. Smart Automation
+### 2. Smart Automation
 
 Preview before execute:
 ```
@@ -345,7 +338,7 @@ curl https://api.openai.com/v1/models \
 
 ## 📞 Support
 
-For support, email support@smartgement.com or open an issue.
+For support, email synchronizeteams88@gmail.com or open an issue.
 
 ---
 
