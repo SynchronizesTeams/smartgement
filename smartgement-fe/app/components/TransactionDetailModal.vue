@@ -1,15 +1,12 @@
 <template>
   <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" @click="$emit('close')">
     <div class="bg-white border-4 border-black w-full max-w-3xl max-h-[90vh] overflow-hidden" @click.stop>
-      <!-- Header -->
       <div class="bg-black text-white p-4 flex justify-between items-center">
         <h3 class="font-bold uppercase">Transaction #{{ transaction.id }}</h3>
         <button @click="$emit('close')" class="text-2xl hover:text-gray-300">×</button>
       </div>
 
-      <!-- Content -->
       <div class="p-6 overflow-y-auto max-h-[70vh]">
-        <!-- Transaction Info Section -->
         <div class="border-2 border-black p-4 mb-6">
           <h4 class="font-bold uppercase mb-4">Transaction Info</h4>
           <div class="grid grid-cols-2 gap-4">
@@ -33,7 +30,6 @@
             </div>
           </div>
           
-          <!-- Editable Fields -->
           <div v-if="!editing" class="mt-4 grid grid-cols-2 gap-4">
             <div>
               <p class="text-sm font-bold uppercase text-gray-500">Customer</p>
@@ -45,7 +41,6 @@
             </div>
           </div>
           
-          <!-- Edit Form -->
           <div v-else class="mt-4 space-y-4">
             <div>
               <label class="block text-sm font-bold uppercase mb-2">Customer Name</label>
@@ -105,17 +100,14 @@
         </button>
       </div>
 
-      <!-- Hidden Print Content -->
       <div id="receipt-print" class="hidden">
         <div class="p-8 font-mono text-sm" style="width: 320px; margin: 0 auto;">
-          <!-- Store Header -->
           <div class="text-center mb-6 pb-4 border-b-2 border-dashed border-black">
             <h1 class="text-3xl font-bold mb-2 uppercase">{{ user?.username || 'TOKO SAYA' }}</h1>
             <p class="text-xs">STRUK PEMBELIAN</p>
             <p class="text-xs mt-1">================================</p>
           </div>
           
-          <!-- Transaction Info -->
           <div class="mb-4 text-xs space-y-1">
             <div class="flex justify-between">
               <span>No. Transaksi</span>
@@ -131,19 +123,16 @@
             </div>
           </div>
 
-          <!-- Customer Info -->
           <div class="mb-4 pb-4 border-b border-dashed border-black">
             <div class="text-xs">
               <span class="font-bold">Nama Pembeli:</span> {{ transaction.customer_name || 'Walk-in Customer' }}
             </div>
           </div>
           
-          <!-- Items Header -->
           <div class="mb-2">
             <p class="text-xs font-bold border-b-2 border-black pb-1">DETAIL BELANJA</p>
           </div>
           
-          <!-- Items List -->
           <div class="mb-4 pb-4 border-b-2 border-black space-y-3">
             <div v-for="(item, idx) in transaction.items" :key="item.id" class="text-xs">
               <div class="flex justify-between font-bold mb-1">
@@ -157,7 +146,6 @@
             </div>
           </div>
           
-          <!-- Payment Summary -->
           <div class="mb-6 space-y-2">
             <div class="flex justify-between text-xs pb-2">
               <span>Metode Pembayaran</span>
@@ -169,7 +157,6 @@
             </div>
           </div>
           
-          <!-- Footer -->
           <div class="text-center text-xs border-t-2 border-dashed border-black pt-4 space-y-2">
             <p class="font-bold text-base">TERIMA KASIH</p>
             <p>Barang yang sudah dibeli</p>

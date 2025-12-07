@@ -1,7 +1,6 @@
 <template>
   <nav class="navbar" :class="{ scrolled: isScrolled }">
     <div class="navbar-container">
-      <!-- Logo and Page Title -->
       <div class="navbar-brand">
         <NuxtLink to="/dashboard" class="logo-link">
           Smart<span class="logo-highlight">gement</span>
@@ -11,7 +10,6 @@
         </slot>
       </div>
 
-      <!-- Desktop Navigation -->
       <div class="navbar-nav desktop-nav">
         <NuxtLink to="/dashboard" class="nav-link" active-class="active">
           Products
@@ -23,7 +21,6 @@
           AI Chat
         </NuxtLink>
 
-        <!-- User Profile -->
         <NuxtLink v-if="user" to="/profile" class="user-profile">
           <div class="user-avatar">
             {{ userInitial }}
@@ -34,7 +31,6 @@
         <button @click="handleLogout" class="btn-logout">Logout</button>
       </div>
 
-      <!-- Mobile Menu Button -->
       <button
         @click="toggleMobileMenu"
         class="mobile-menu-btn"
@@ -46,7 +42,6 @@
       </button>
     </div>
 
-    <!-- Mobile Navigation -->
     <div class="mobile-nav" :class="{ open: isMobileMenuOpen }">
       <NuxtLink
         to="/dashboard"
