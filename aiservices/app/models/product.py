@@ -31,50 +31,40 @@ class Product(Base):
 
 
 class ProductTrend(Base):
-    """Product trend data for demand analysis"""
     __tablename__ = "product_trends"
     
-    id = Column(Integer, primary_key=True, index=True)
-    # Match unsigned int from Product
+    id = Column(INTEGER(unsigned=True), primary_key=True, index=True)
     product_id = Column(INTEGER(unsigned=True), ForeignKey("products.id"), nullable=False)
     date = Column(Date, nullable=False, index=True)
-    
-    # Sales metrics
+
     quantity_sold = Column(Integer, default=0)
     revenue = Column(Float, default=0.0)
     views = Column(Integer, default=0)
     popularity_score = Column(Float, default=0.0)
-    
-    # Additional context
+
     meta_data = Column(JSON, nullable=True)
-    
     created_at = Column(DateTime, default=datetime.utcnow)
-    
-    # Relationships
+
     product = relationship("Product", back_populates="trends")
 
 
+
 class ProductRisk(Base):
-    """Risk assessment records for products"""
     __tablename__ = "product_risks"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    # Match unsigned int from Product
+
+    id = Column(INTEGER(unsigned=True), primary_key=True, index=True)
     product_id = Column(INTEGER(unsigned=True), ForeignKey("products.id"), nullable=False)
-    
-    # Risk information
+
     risk_type = Column(String(50), nullable=False)
     risk_level = Column(String(20), nullable=False)
     risk_score = Column(Float, default=0.0)
     reason = Column(Text)
-    
-    # Recommendations
+
     recommendation = Column(Text)
-    
     calculated_at = Column(DateTime, default=datetime.utcnow)
-    
-    # Relationships
+
     product = relationship("Product", back_populates="risks")
+
 
 
 class AutomationHistory(Base):
