@@ -24,3 +24,5 @@ httpx
 pytest
 pytest-asyncio
 httpx  # for testing async endpoints
+jsonschema
+reportlab
