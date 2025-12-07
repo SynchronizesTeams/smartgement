@@ -194,7 +194,7 @@ onMounted(() => {
 });
 
 // Auth guard - if we had middleware we would use it, for now simple check
-// const { isAuthenticated } = useAuth();
+const { isAuthenticated } = useAuth();
 if (!isAuthenticated.value) {
   router.push("/login");
 }

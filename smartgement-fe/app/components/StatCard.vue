@@ -21,7 +21,7 @@
     >
       <span v-if="prefix" class="text-2xl opacity-80">{{ prefix }}</span>
       <AnimatedNumber
-        v-if="animated"
+        v-if="animated && typeof value === 'number'"
         :value="value"
         :duration="animationDuration"
       />
@@ -36,7 +36,7 @@
           'text-green-500': trendDirection === 'up',
           'text-red-500': trendDirection === 'down',
           'text-gray-500': trendDirection === 'neutral',
-        }"
+        }"  
       >
         {{
           trendDirection === "up" ? "↑" : trendDirection === "down" ? "↓" : "→"
@@ -70,7 +70,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const formattedValue = computed(() => {
   if (typeof props.value === "number") {
-    return props.value.toLocaleString();
+    return props.value.toLocaleString("id-ID");
   }
   return props.value;
 });
@@ -90,42 +90,50 @@ export const AnimatedNumber = defineComponent({
   },
   setup(props) {
     const displayValue = ref(0);
+    let animationFrameId: number | null = null;
 
+    const animateToValue = (targetValue: number) => {
+      // Only animate in browser (client-side)
+      if (process.server) {
+        displayValue.value = targetValue;
+        return;
+      }
+
+      // Cancel any ongoing animation
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+      }
+
+      const start = displayValue.value;
+      const end = targetValue;
+      const startTime = Date.now();
+
+      const animate = () => {
+        const now = Date.now();
+        const progress = Math.min((now - startTime) / props.duration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        displayValue.value = Math.round(start + (end - start) * easeOut);
+
+        if (progress < 1) {
+          animationFrameId = requestAnimationFrame(animate);
+        } else {
+          animationFrameId = null;
+        }
+      };
+
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    // Watch for value changes
     watch(
       () => props.value,
-      (newValue, oldValue) => {
-        const start = oldValue || 0;
-        const end = newValue;
-        const startTime = Date.now();
-
-        const animate = () => {
-          const now = Date.now();
-          const progress = Math.min((now - startTime) / props.duration, 1);
-
-          const easeOut = 1 - Math.pow(1 - progress, 3);
-
-          displayValue.value = Math.round(start + (end - start) * easeOut);
-
-          if (progress < 1) {
-            if (typeof window !== "undefined" && window.requestAnimationFrame) {
-              requestAnimationFrame(animate);
-            }
-          }
-        };
-
-        if (typeof window !== "undefined" && window.requestAnimationFrame) {
-          animate();
-        } else {
-          displayValue.value = end;
-        }
+      (newValue) => {
+        animateToValue(newValue);
       },
       { immediate: true }
     );
 
-    return {
-      displayValue,
-    };
+    return () => h('span', displayValue.value.toLocaleString('id-ID'));
   },
-  template: `<span>{{ displayValue.toLocaleString() }}</span>`,
 });
 </script>
