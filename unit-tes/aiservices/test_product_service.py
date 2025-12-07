@@ -9,7 +9,7 @@ from app.models.product import Product
 async def test_create_product(test_db, test_merchant_id):
     """Test creating a new product"""
     product_data = ProductCreate(
-        merchant_id=int(test_merchant_id),
+        merchant_id=test_merchant_id,  # Use string
         name="Test Product",
         price=10000.0,
         stock=20,
@@ -71,7 +71,9 @@ def test_delete_product(test_db, sample_product):
     """Test deleting a product"""
     product_id = sample_product.id
     
-    product_service.delete_product(test_db, product_id)
+    result = product_service.delete_product(test_db, product_id)
+    
+    assert result == True
     
     # Verify deletion
     product = test_db.query(Product).filter(Product.id == product_id).first()
@@ -81,7 +83,7 @@ def test_delete_product(test_db, sample_product):
 def test_get_products_by_ingredient(test_db, multiple_products, test_merchant_id):
     """Test finding products by ingredient"""
     products = product_service.get_products_by_ingredient(
-        test_db, int(test_merchant_id), "tepung"
+        test_db, test_merchant_id, "tepung"
     )
     
     assert len(products) >= 2  # Should find products with tepung

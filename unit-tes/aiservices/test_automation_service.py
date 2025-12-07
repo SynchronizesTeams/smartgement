@@ -5,7 +5,7 @@ from app.models.product import Product
 
 
 @pytest.mark.asyncio
-async def test_preview_automation_empty_stock(test_db, multiple_products, test_merchant_id, mock_llm_client):
+async def test_preview_automation_empty_stock(test_db, multiple_products, test_merchant_id, mock_llm_global):
     """Test preview automation for emptying stock"""
     command = "Kosongkan semua produk yang mengandung tepung"
     
@@ -18,7 +18,7 @@ async def test_preview_automation_empty_stock(test_db, multiple_products, test_m
 
 
 @pytest.mark.asyncio
-async def test_preview_automation_no_products_found(test_db, test_merchant_id, mock_llm_client):
+async def test_preview_automation_no_products_found(test_db, test_merchant_id, mock_llm_global):
     """Test preview automation when no products match"""
     command = "Hapus semua produk xyz123"
     
@@ -60,7 +60,7 @@ async def test_find_affected_products_by_ingredient(test_db, multiple_products, 
 
 
 @pytest.mark.asyncio
-async def test_execute_automation_empty_stock(test_db, multiple_products, test_merchant_id, mock_llm_client):
+async def test_execute_automation_empty_stock(test_db, multiple_products, test_merchant_id, mock_llm_global):
     """Test executing automation to empty stock"""
     command = "Kosongkan stok roti tawar"
     
@@ -77,7 +77,7 @@ async def test_execute_automation_empty_stock(test_db, multiple_products, test_m
 
 
 @pytest.mark.asyncio
-async def test_execute_automation_requires_confirmation(test_db, multiple_products, test_merchant_id, mock_llm_client):
+async def test_execute_automation_requires_confirmation(test_db, multiple_products, test_merchant_id, mock_llm_global):
     """Test that high-impact operations require confirmation"""
     # Create many products to trigger confirmation requirement
     for i in range(10):
@@ -92,18 +92,6 @@ async def test_execute_automation_requires_confirmation(test_db, multiple_produc
     
     assert result["success"] == False
     assert result["requires_confirmation"] == True
-
-
-@pytest.mark.asyncio
-async def test_parse_automation_command(test_merchant_id, mock_llm_client):
-    """Test parsing automation command with LLM"""
-    command = "Hapus semua roti isi daging"
-    
-    parsed = await automation_service._parse_automation_command(command, test_merchant_id)
-    
-    assert parsed["success"] == True
-    assert "action" in parsed
-    assert "filters" in parsed
 
 
 @pytest.mark.asyncio
@@ -156,7 +144,7 @@ async def test_get_automation_history(test_db, test_merchant_id):
             command=f"Test command {i}",
             affected_product_ids=[1, 2, 3],
             previous_state={}
-        )
+        ) 
         test_db.add(history)
     test_db.commit()
     

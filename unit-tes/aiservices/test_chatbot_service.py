@@ -6,7 +6,7 @@ from app.models.product import Product
 
 
 @pytest.mark.asyncio
-async def test_classify_intent_add_product(mock_llm_client):
+async def test_classify_intent_add_product(mock_llm_global, monkeypatch):
     """Test intent classification for adding product"""
     message = "Tambahkan produk Roti Tawar harga 15000"
     
@@ -15,19 +15,16 @@ async def test_classify_intent_add_product(mock_llm_client):
         return '{"intent": "add_product", "confidence": 0.95}'
     
     import app.services.llm_client as llm
-    original = llm.generate_text
-    llm.generate_text = mock_add
+    monkeypatch.setattr(llm, "generate_text", mock_add)
     
     result = await chatbot_service.classify_intent(message)
-    
-    llm.generate_text = original
     
     assert result["intent"] == "add_product"
     assert result["confidence"] >= 0.8
 
 
 @pytest.mark.asyncio
-async def test_classify_intent_automation(mock_llm_client):
+async def test_classify_intent_automation(mock_llm_global, monkeypatch):
     """Test intent classification for automation"""
     message = "Kosongkan semua produk yang mengandung tepung"
     
@@ -35,12 +32,9 @@ async def test_classify_intent_automation(mock_llm_client):
         return '{"intent": "automation", "confidence": 0.95}'
     
     import app.services.llm_client as llm
-    original = llm.generate_text
-    llm.generate_text = mock_automation
+    monkeypatch.setattr(llm, "generate_text", mock_automation)
     
     result = await chatbot_service.classify_intent(message)
-    
-    llm.generate_text = original
     
     assert result["intent"] == "automation"
 
@@ -66,7 +60,7 @@ async def test_handle_list_products_empty(test_db, test_merchant_id):
 
 
 @pytest.mark.asyncio
-async def test_handle_add_product(test_db, test_merchant_id, mock_llm_client):
+async def test_handle_add_product(test_db, test_merchant_id, mock_llm_global, monkeypatch):
     """Test adding product via chatbot"""
     message = "Tambahkan produk Kopi Susu harga 20000 stok 30"
     
@@ -75,12 +69,9 @@ async def test_handle_add_product(test_db, test_merchant_id, mock_llm_client):
         return '{"name": "Kopi Susu", "price": 20000, "stock": 30}'
     
     import app.services.llm_client as llm
-    original = llm.generate_text
-    llm.generate_text = mock_extract
+    monkeypatch.setattr(llm, "generate_text", mock_extract)
     
     response, actions = await chatbot_service._handle_add_product(test_db, test_merchant_id, message)
-    
-    llm.generate_text = original
     
     assert "berhasil ditambahkan" in response.lower()
     assert "Kopi Susu" in response
@@ -93,7 +84,7 @@ async def test_handle_add_product(test_db, test_merchant_id, mock_llm_client):
 
 
 @pytest.mark.asyncio
-async def test_handle_edit_product(test_db, sample_product, test_merchant_id, mock_llm_client):
+async def test_handle_edit_product(test_db, sample_product, test_merchant_id, mock_llm_global, monkeypatch):
     """Test editing product via chatbot"""
     message = "Ubah harga Roti Tawar jadi 12000"
     
@@ -102,12 +93,9 @@ async def test_handle_edit_product(test_db, sample_product, test_merchant_id, mo
         return '{"search_query": "Roti Tawar", "updates": {"price": 12000}}'
     
     import app.services.llm_client as llm
-    original = llm.generate_text
-    llm.generate_text = mock_extract
+    monkeypatch.setattr(llm, "generate_text", mock_extract)
     
     response, actions = await chatbot_service._handle_edit_product(test_db, test_merchant_id, message)
-    
-    llm.generate_text = original
     
     assert "berhasil diupdate" in response.lower()
     
@@ -117,7 +105,7 @@ async def test_handle_edit_product(test_db, sample_product, test_merchant_id, mo
 
 
 @pytest.mark.asyncio
-async def test_handle_delete_product(test_db, sample_product, test_merchant_id, mock_llm_client):
+async def test_handle_delete_product(test_db, sample_product, test_merchant_id, mock_llm_global, monkeypatch):
     """Test deleting product via chatbot"""
     message = "Hapus produk Roti Tawar"
     
@@ -126,12 +114,9 @@ async def test_handle_delete_product(test_db, sample_product, test_merchant_id, 
         return '{"search_query": "Roti Tawar"}'
     
     import app.services.llm_client as llm
-    original = llm.generate_text
-    llm.generate_text = mock_extract
+    monkeypatch.setattr(llm, "generate_text", mock_extract)
     
     response, actions = await chatbot_service._handle_delete_product(test_db, test_merchant_id, message)
-    
-    llm.generate_text = original
     
     assert "berhasil dihapus" in response.lower()
     assert "Roti Tawar" in response
@@ -142,7 +127,7 @@ async def test_handle_delete_product(test_db, sample_product, test_merchant_id, 
 
 
 @pytest.mark.asyncio
-async def test_handle_query(test_db, multiple_products, test_merchant_id, mock_llm_client):
+async def test_handle_query(test_db, multiple_products, test_merchant_id, mock_llm_global):
     """Test query handling with product context"""
     message = "Berapa stok kopi?"
     
@@ -165,7 +150,7 @@ async def test_is_list_request():
 
 
 @pytest.mark.asyncio
-async def test_process_chat_message(test_db, test_merchant_id, mock_llm_client):
+async def test_process_chat_message(test_db, test_merchant_id, mock_llm_global):
     """Test full chat message processing flow"""
     message = ChatMessage(
         merchant_id=test_merchant_id,

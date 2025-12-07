@@ -13,6 +13,30 @@ from app.database import Base
 from app.models.product import Product, ChatHistory, AutomationHistory
 
 
+# Global LLM mock with autouse to prevent ANY real API calls
+@pytest.fixture(autouse=True)
+def mock_llm_global(monkeypatch):
+    """Global mock for LLM to prevent real API calls"""
+    async def fake_generate_text(prompt, system_prompt=None):
+        # Default response for any LLM call
+        if "intent" in prompt.lower() or "classify" in prompt.lower():
+            return '{"intent": "query", "confidence": 0.8}'
+        elif "automation" in prompt.lower() or "parse" in prompt.lower():
+            return '{"action": "empty_stock", "filters": {"search_query": "tepung", "ingredient": "tepung", "description": "produk yang mengandung tepung"}}'
+        elif "extract product" in prompt.lower() and "add" in prompt.lower():
+            return '{"name": "Roti Tawar", "price": 15000, "stock": 50}'
+        elif "extract edit" in prompt.lower() or "extract details" in prompt.lower():
+            return '{"search_query": "Roti Tawar", "updates": {"price": 12000}}'
+        elif "extract product name to delete" in prompt.lower() or "delete from" in prompt.lower():
+            return '{"search_query": "Roti Tawar"}'
+        else:
+            return "Berikut adalah informasi yang Anda minta."
+    
+    from app.services import llm_client
+    monkeypatch.setattr(llm_client, "generate_text", fake_generate_text)
+    return fake_generate_text
+
+
 @pytest.fixture(scope="function")
 def test_db():
     """Create an in-memory SQLite database for testing"""
@@ -30,7 +54,7 @@ def test_db():
 
 @pytest.fixture
 def test_merchant_id():
-    """Return a test merchant ID"""
+    """Return a test merchant ID as string"""
     return "1"
 
 
@@ -84,42 +108,11 @@ def multiple_products(test_db, test_merchant_id):
     return products
 
 
-@pytest.fixture
-def mock_llm_client(monkeypatch):
-    """Mock the LLM client to avoid API calls"""
-    async def mock_generate_text(prompt, system_prompt=None):
-        # Return different responses based on the prompt content
-        if "intent" in prompt.lower() or "classify" in prompt.lower():
-            return '{"intent": "query", "confidence": 0.8}'
-        elif "automation" in prompt.lower() or "parse" in prompt.lower():
-            return '{"action": "empty_stock", "filters": {"search_query": "tepung", "ingredient": "tepung", "description": "produk yang mengandung tepung"}}'
-        elif "extract product" in prompt.lower():
-            return '{"name": "Roti Tawar", "price": 15000, "stock": 50}'
-        elif "extract edit" in prompt.lower():
-            return '{"search_query": "Roti Tawar", "updates": {"price": 12000}}'
-        elif "extract product name to delete" in prompt.lower():
-            return '{"search_query": "Roti Tawar"}'
-        else:
-            return "Berikut adalah informasi yang Anda minta."
-    
-    # Patch the generate_text function
-    from app.services import llm_client
-    monkeypatch.setattr(llm_client, "generate_text", mock_generate_text)
-    return mock_generate_text
-
-
-@pytest.fixture
-def mock_qdrant_client(monkeypatch):
-    """Mock Qdrant client to avoid external service calls"""
-    mock_client = MagicMock()
-    return mock_client
-
-
 # Helper functions for test data
 def create_test_product(db, merchant_id, **kwargs):
     """Helper to create a test product with default values"""
     defaults = {
-        "merchant_id": int(merchant_id),
+        "merchant_id": int(merchant_id) if isinstance(merchant_id, str) else merchant_id,
         "name": "Test Product",
         "price": 10000.0,
         "stock": 10,
