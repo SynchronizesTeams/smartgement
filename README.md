@@ -2,7 +2,7 @@
 
 Sistem manajemen produk pintar untuk UMKM dengan AI chatbot, automasi, dan analisis risiko.
 
-## 🚀 Features
+##  Features
 
 - **AI Chatbot**: Kelola produk dengan natural language (Bahasa Indonesia)
 - **Product CRUD**: Tambah, edit, hapus, lihat produk via chat
@@ -12,7 +12,7 @@ Sistem manajemen produk pintar untuk UMKM dengan AI chatbot, automasi, dan anali
 - **Authentication**: Protected routes, user management
 - **Profile Management**: Edit profil dan ubah password
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 smartgement/
@@ -22,7 +22,7 @@ smartgement/
 └── README.md
 ```
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 ### Backend (Go)
 - **Framework**: Fiber v2
@@ -41,7 +41,7 @@ smartgement/
 - **UI**: TailwindCSS + Custom CSS
 - **State**: Composables (useAuth, useApi)
 
-## 📦 Prerequisites
+##  Prerequisites
 
 - **Go** 1.21+
 - **Python** 3.10+
@@ -96,7 +96,7 @@ npm run dev
 
 **Port**: 3000
 
-## 🔐 Environment Variables
+##  Environment Variables
 
 ### Backend (.env)
 ```env
@@ -125,7 +125,7 @@ runtimeConfig: {
 }
 ```
 
-## 📖 Usage
+##  Usage
 
 ### Chat Commands (Bahasa Indonesia)
 
@@ -175,7 +175,7 @@ GET    /risk/assess/:product_id
 GET    /risk/high-risk
 ```
 
-## 🏗️ Architecture
+##  Architecture
 
 ### Data Flow
 
@@ -211,7 +211,7 @@ MySQL Database
 7. Frontend displays messages
 ```
 
-## 🎯 Key Features Explained
+##  Key Features Explained
 
 
 ### 1. Conversation Memory
@@ -234,7 +234,7 @@ Preview before execute:
 5. Shows success (2 products updated)
 ```
 
-## 🧪 Testing
+##  Testing
 
 ### Manual Testing
 
@@ -255,7 +255,7 @@ $body = @{ merchant_id = "1"; message = "Tampilkan produk" } | ConvertTo-Json
 Invoke-RestMethod -Uri "http://localhost:8000/chatbot/message" -Method POST -Body $body -ContentType "application/json"
 ```
 
-## 📝 Database Schema
+## � Database Schema
 
 ### Products
 ```sql
@@ -286,7 +286,7 @@ CREATE TABLE chat_history (
 );
 ```
 
-## 🔍 Troubleshooting
+##  Troubleshooting
 
 ### Port Already in Use
 ```bash
@@ -317,26 +317,26 @@ curl https://api.openai.com/v1/models \
   -H "Authorization: Bearer $OPENAI_API_KEY"
 ```
 
-## 🚀 Deployment
+##  Deployment
 
 ### Production Checklist
 
-- [ ] Set production environment variables
-- [ ] Use secure JWT secret
-- [ ] Enable HTTPS
-- [ ] Configure CORS properly
-- [ ] Set up database backups
-- [ ] Monitor API usage (OpenAI)
-- [ ] Set up error logging
-- [ ] Configure rate limiting
-\
+- [✓] Set production environment variables
+- [✓] Use secure JWT secret
+- [✓] Enable HTTPS
+- [✓] Configure CORS properly
+- [✓] Set up database backups
+- [✓] Monitor API usage (OpenAI)
+- [✓] Set up error logging
+- [✓] Configure rate limiting
+
 
 - OpenAI for GPT-4 API
 - Nuxt.js team
 - FastAPI team
 - Fiber team
 
-## 📞 Support
+##  Support
 
 For support, email synchronizeteams88@gmail.com or open an issue.
 
