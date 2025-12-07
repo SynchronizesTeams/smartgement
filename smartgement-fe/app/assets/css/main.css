@@ -98,7 +98,7 @@ p {
 /* Links */
 a {
     color: var(--color-gray-900);
-    text-decoration: underline;
+    text-decoration: none;
     transition: color var(--transition-fast);
 }
 
