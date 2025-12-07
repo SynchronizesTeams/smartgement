@@ -5,7 +5,10 @@ from app.models.product import Product, AutomationHistory, ChatHistory
 from app.services.product_service import get_products_by_ingredient
 from app.services.llm_client import generate_text
 import json
+import logging
 from jsonschema import validate, ValidationError
+
+logger = logging.getLogger(__name__)
 
 automation_schema = {
     "type": "object",
@@ -17,13 +20,12 @@ automation_schema = {
                 "search_query": {"type": "string"},
                 "ingredient": {"type": "string"},
                 "description": {"type": "string"}
-            },
-            "required": ["description"]
+            }
         },
         "new_stock": {"type": "number"},
         "product_data": {"type": "object"}
     },
-    "required": ["action", "filters"]
+    "required": ["action"]
 }
 
 
@@ -47,6 +49,14 @@ async def preview_automation(
     
     # Find affected products
     affected_products = await _find_affected_products(db, merchant_id, filters)
+    
+    # Check if no products found
+    if len(affected_products) == 0:
+        search_desc = filters.get('description', 'kriteria tersebut')
+        return {
+            "success": False,
+            "error": f"Tidak ada produk yang cocok dengan '{search_desc}'. Coba cek daftar produk Anda atau gunakan kata kunci yang berbeda."
+        }
     
     # Generate description
     if action == "empty_stock":
@@ -223,25 +233,36 @@ async def undo_last_operation(
 async def _parse_automation_command(command: str, merchant_id: str) -> Dict:
     """Use LLM to parse automation command into structured action"""
     prompt = f"""
-Parse the following automation command into a structured action.
+You are helping parse a user's automation command into a structured format.
 
-Command: "{command}"
+User's command: "{command}"
 
-Return a JSON object with:
-- action: one of "empty_stock", "update_stock", "delete"
-- filters: object describing what products to affect
-  - search_query: text to search for (e.g., "tepung", "flour products")
-  - ingredient: specific ingredient if mentioned
-- new_stock: if updating to specific value
+Your task: Return ONLY a valid JSON object (no markdown, no explanations) with these fields:
 
-Example:
-Command: "Kosongkan semua produk yang mengandung tepung"
-Response: {{"action": "empty_stock", "filters": {{"search_query": "tepung", "ingredient": "tepung", "description": "products containing flour (tepung)"}}}}
+1. "action" (required): Choose one:
+   - "empty_stock" - set stock to 0
+   - "update_stock" - change stock to a specific number
+   - "delete" - remove products permanently
 
-Command: "Hapus semua roti"
-Response: {{"action": "delete", "filters": {{"search_query": "roti", "description": "bread products (roti)"}}}}
+2. "filters" (required): An object with:
+   - "search_query": what to search for in product name/description
+   - "ingredient": specific ingredient if mentioned
+   - "description": human-readable explanation of what products will be affected (REQUIRED)
 
-Only return the JSON, nothing else.
+3. "new_stock" (optional): new stock number if action is "update_stock"
+
+Examples:
+
+Input: "Kosongkan semua produk yang mengandung tepung"
+Output: {{"action": "empty_stock", "filters": {{"search_query": "tepung", "ingredient": "tepung", "description": "produk yang mengandung tepung"}}}}
+
+Input: "Hapus semua roti isi daging"
+Output: {{"action": "delete", "filters": {{"search_query": "roti isi daging", "ingredient": "daging", "description": "roti isi daging"}}}}
+
+Input: "Update stok kopi menjadi 50"
+Output: {{"action": "update_stock", "filters": {{"search_query": "kopi", "description": "produk kopi"}}, "new_stock": 50}}
+
+IMPORTANT: Always include the "description" field in filters. Return ONLY the JSON object.
 """
     
     try:
@@ -250,24 +271,76 @@ Only return the JSON, nothing else.
         response = response.strip()
         if response.startswith("```json"):
             response = response.replace("```json", "").replace("```", "").strip()
+        if response.startswith("```"):
+            response = response.replace("```", "").strip()
         
         parsed = json.loads(response)
+        
+        # Add fallback description if missing
+        if "filters" in parsed and "description" not in parsed["filters"]:
+            search_query = parsed["filters"].get("search_query", "")
+            ingredient = parsed["filters"].get("ingredient", "")
+            parsed["filters"]["description"] = search_query or ingredient or "produk yang dimaksud"
+        
+        # Validate schema
         validate(parsed, automation_schema)
         parsed["success"] = True
         return parsed
 
-    except (json.JSONDecodeError, ValidationError) as e:
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse LLM JSON response: {e}. Response was: {response}")
         return {
             "success": False,
-            "error": f"Invalid LLM output: {str(e)}"
+            "error": "Maaf, saya belum bisa memahami perintah tersebut dengan baik. Bisa diulang dengan lebih spesifik? Misalnya: 'Kosongkan stok semua produk roti' atau 'Hapus produk yang mengandung tepung'"
+        }
+    except ValidationError as e:
+        logger.error(f"LLM response validation failed: {e}")
+        return {
+            "success": False,
+            "error": "Hmm, saya kurang paham maksud perintahnya. Coba jelaskan lebih detail produk mana yang ingin diubah. Contoh: 'Hapus semua roti' atau 'Kosongkan stok produk tepung'"
+        }
+    except Exception as e:
+        logger.error(f"Unexpected error in automation parsing: {e}")
+        return {
+            "success": False,
+            "error": "Maaf, terjadi kesalahan saat memproses perintah. Bisa coba lagi atau gunakan kata-kata yang lebih sederhana?"
         }
 
 
+async def _extract_stock_value(command: str) -> int:
     """Extract stock value from command if updating stock"""
     # Simple extraction - look for numbers
     import re
     numbers = re.findall(r'\d+', command)
     return int(numbers[0]) if numbers else 0
+
+
+async def _find_affected_products(
+    db: Session,
+    merchant_id: str,
+    filters: Dict
+) -> List[Product]:
+    """Find products that match the given filters"""
+    query = db.query(Product).filter(Product.merchant_id == int(merchant_id))
+    
+    # Apply filters
+    search_query = filters.get("search_query", "")
+    ingredient = filters.get("ingredient", "")
+    
+    if search_query:
+        # Search in name, description, category, or ingredients
+        query = query.filter(
+            (Product.name.ilike(f"%{search_query}%")) |
+            (Product.description.ilike(f"%{search_query}%")) |
+            (Product.category.ilike(f"%{search_query}%")) |
+            (Product.ingredients.ilike(f"%{search_query}%"))
+        )
+    
+    if ingredient:
+        # Search specifically in ingredients field
+        query = query.filter(Product.ingredients.ilike(f"%{ingredient}%"))
+    
+    return query.all()
 
 
 def get_automation_history(
