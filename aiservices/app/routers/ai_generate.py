@@ -9,10 +9,10 @@ async def gen_desc(body: dict):
     context = body.get("context", "")
 
     prompt = f"""
-    Create a compelling product description for:
+    Buat deskripsi produk yang menarik untuk:
     {product_name}
 
-    Business context:
+    Konteks bisnis:
     {context}
     """
 

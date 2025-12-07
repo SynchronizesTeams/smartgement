@@ -96,8 +96,8 @@
           <button v-if="editing" @click="saveEdit" :disabled="saving" class="bg-black text-white px-6 py-2 font-bold uppercase hover:bg-gray-800 disabled:opacity-50">
             {{ saving ? 'Saving...' : 'Save' }}
           </button>
-          <button @click="handlePrint" class="bg-white border-2 border-black px-6 py-2 font-bold uppercase hover:bg-gray-100">
-            🖨️ Print
+          <button @click="handlePrint" class="bg-white border-2 border-black px-6 py-2 font-bold uppercase hover:bg-gray-100 flex items-center gap-2">
+            <Printer :size="16" /> Print
           </button>
         </div>
         <button v-if="transaction.status === 'completed'" @click="confirmCancel" class="bg-red-600 text-white px-6 py-2 font-bold uppercase hover:bg-red-700">
@@ -183,6 +183,8 @@
 </template>
 
 <script setup lang="ts">
+import { Printer } from 'lucide-vue-next'
+
 const props = defineProps<{
   transaction: any
 }>()

@@ -1,67 +1,62 @@
 export const useApi = () => {
-    const config = useRuntimeConfig()
-    const apiBase = config.public.apiBase
+  const config = useRuntimeConfig()
+  const apiBase = config.public.apiBase
+  const aiBase = config.public.aiBase
 
-    const call = async <T = any>(
-        endpoint: string,
-        options: RequestInit = {}
-    ): Promise<T> => {
-        const url = `${apiBase}${endpoint}`
-        console.log('[useApi] Calling:', url, 'with Base:', apiBase)
+  const call = async <T = any>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> => {
+    const url = `${apiBase}${endpoint}`
 
-        try {
-            const token = useCookie('auth_token').value
-            console.log("Auth Token from cookies:", token)
+    try {
+      const token = useCookie('auth_token').value
+      const headers: any = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...options.headers,
+      }
 
-            const headers: any = {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                ...options.headers,
-            }
+      if (token) headers['Authorization'] = `Bearer ${token}`
 
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`
-            }
-
-            const response = await $fetch<T>(url, {
-                ...options,
-                headers,
-            } as any)
-
-            return response
-        } catch (error: any) {
-            console.error('API call error:', error)
-            throw error
-        }
+      return await $fetch<T>(url, {
+        ...options,
+        headers,
+      } as any)
+    } catch (error: any) {
+      console.error('API call error:', error)
+      throw error
     }
+  }
 
-    const get = <T = any>(endpoint: string, options: any = {}) => {
-        return call<T>(endpoint, { ...options, method: 'GET' })
-    }
+  const callAI = async <T = any>(
+    endpoint: string,
+    body: any
+  ): Promise<T> => {
+    const url = `${aiBase}${endpoint}`
 
-    const post = <T = any>(endpoint: string, data?: any) => {
-        return call<T>(endpoint, {
-            method: 'POST',
-            body: JSON.stringify(data),
-        })
+    try {
+      return await $fetch<T>(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body
+      })
+    } catch (error: any) {
+      console.error('AI call error:', error)
+      throw error
     }
+  }
 
-    const put = <T = any>(endpoint: string, data?: any) => {
-        return call<T>(endpoint, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        })
-    }
-
-    const del = <T = any>(endpoint: string) => {
-        return call<T>(endpoint, { method: 'DELETE' })
-    }
-
-    return {
-        call,
-        get,
-        post,
-        put,
-        delete: del,
-    }
+  return {
+    call,
+    callAI, // ⬅ WAJIB RETURN DI SINI
+    get: (endpoint: string, options: any = {}) =>
+      call(endpoint, { ...options, method: 'GET' }),
+    post: (endpoint: string, data?: any) =>
+      call(endpoint, { method: 'POST', body: JSON.stringify(data) }),
+    put: (endpoint: string, data?: any) =>
+      call(endpoint, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (endpoint: string) =>
+      call(endpoint, { method: 'DELETE' }),
+  }
 }

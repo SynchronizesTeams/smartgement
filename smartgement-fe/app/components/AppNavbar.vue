@@ -13,6 +13,9 @@
       <NuxtLink to="/dashboard" class="hover:underline decoration-2 underline-offset-4">
         Products
       </NuxtLink>
+      <NuxtLink to="/transactions" class="hover:underline decoration-2 underline-offset-4">
+        Transactions
+      </NuxtLink>
       <NuxtLink to="/chat" class="hover:underline decoration-2 underline-offset-4">
         AI Chat
       </NuxtLink>

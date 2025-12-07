@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas.product import (
@@ -7,6 +8,11 @@ from app.schemas.product import (
     UndoRequest
 )
 from app.services import chatbot_service, automation_service
+from app.services.report_service import report_service
+from app.services.education_service import education_service
+from app.services.transaction_automation import transaction_automation_service
+import json
+import asyncio
 
 router = APIRouter()
 
@@ -15,6 +21,41 @@ router = APIRouter()
 async def chat(message: ChatMessage, db: Session = Depends(get_db)):
     """Send a message to the chatbot"""
     return await chatbot_service.process_chat_message(db, message)
+
+
+@router.post("/message/stream")
+async def chat_stream(message: ChatMessage, db: Session = Depends(get_db)):
+    """Stream chatbot response in chunks for better UX"""
+    async def generate():
+        # Get full response first
+        response = await chatbot_service.process_chat_message(db, message)
+        
+        # Send intent and confidence first
+        yield f"data: {{\"type\": \"meta\", \"intent\": \"{response.intent}\", \"confidence\": {response.confidence}}}\n\n"
+        
+        # Stream response text word by word
+        words = response.response.split()
+        for i, word in enumerate(words):
+            chunk = {
+                "type": "text",
+                "text": word + " ",
+                "done": i == len(words) - 1
+            }
+            yield f"data: {json.dumps(chunk)}\n\n"
+            await asyncio.sleep(0.03)  # 30ms delay for smooth animation
+        
+        # Send suggested actions
+        if response.suggested_actions:
+            actions_data = {
+                "type": "actions",
+                "actions": response.suggested_actions
+            }
+            yield f"data: {json.dumps(actions_data)}\n\n"
+        
+        # Final done signal
+        yield f"data: {{\"type\": \"done\"}}\n\n"
+    
+    return StreamingResponse(generate(), media_type="text/event-stream")
 
 
 @router.post("/automation/preview", response_model=AutomationPreview)
@@ -123,3 +164,30 @@ def get_chat_history(
         }
         for h in history
     ]
+
+
+@router.post("/business-tips")
+async def get_business_tips(merchant_id: str, db: Session = Depends(get_db)):
+    """Get business education tips based on merchant's business type"""
+    return await education_service.get_business_tips(db, merchant_id)
+
+
+@router.post("/growth-strategy")
+async def get_growth_strategy(merchant_id: str, db: Session = Depends(get_db)):
+    """Get personalized growth strategy"""
+    strategy = await education_service.get_growth_strategy(db, merchant_id)
+    return {"strategy": strategy}
+
+
+@router.post("/automation/transaction")
+async def create_transaction_auto(merchant_id: str, description: str, db: Session = Depends(get_db)):
+    """Create transaction from natural language description"""
+    result = await transaction_automation_service.create_transaction_data(db, merchant_id, description)
+    return result
+
+
+@router.post("/automation/batch-products")
+async def batch_add_products(merchant_id: str, description: str, db: Session = Depends(get_db)):
+    """Add multiple products from package description"""
+    result = await transaction_automation_service.batch_add_products(db, merchant_id, description)
+    return result

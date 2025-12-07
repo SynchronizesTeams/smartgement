@@ -20,7 +20,7 @@
             ← Transaksi Baru
           </NuxtLink>
           <button @click="showAIChat = true" class="bg-black text-white px-6 py-3 font-bold uppercase tracking-wider hover:bg-gray-800 transition-colors flex items-center gap-2">
-            <span>🤖 AI Ringkasan</span>
+            <span><BotMessageSquare :size="14" /> AI Ringkasan</span>
           </button>
         </div>
       </div>

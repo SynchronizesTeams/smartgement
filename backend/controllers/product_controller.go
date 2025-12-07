@@ -123,3 +123,6 @@ func (ctrl *ProductController) DeleteProduct(c *fiber.Ctx) error {
 
 	return utils.SuccessResponse(c, "Product deleted successfully", nil)
 }
+
+//generate description with AI /generate-description in python
+

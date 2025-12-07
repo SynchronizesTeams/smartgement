@@ -41,10 +41,15 @@
             </div>
 
             <!-- Description -->
-            <div>
-                <label class="block text-sm font-bold uppercase mb-2">Description (Optional)</label>
-                <textarea v-model="form.description" rows="4" class="w-full border-2 border-black p-3 font-medium focus:outline-none focus:bg-gray-50" placeholder="Product details..."></textarea>
-            </div>
+            <!-- Description with AI button -->
+        <div>
+        
+        
+        <textarea v-model="form.description" rows="4"
+            class="w-full border-2 border-black p-3 font-medium focus:outline-none focus:bg-gray-50"
+            placeholder="Product details..."></textarea>
+        </div>
+
 
              <!-- Ingredients (Optional) -->
             <div>
@@ -72,6 +77,7 @@ const api = useApi()
 const router = useRouter()
 const { isAuthenticated } = useAuth()
 
+
 const loading = ref(false)
 const error = ref('')
 
@@ -83,6 +89,11 @@ const form = reactive({
     description: '',
     ingredients: ''
 })
+
+const loadingDesc = ref(false)
+const { callAI } = useApi()
+
+
 
 // Auth Guard
 if (!isAuthenticated.value) {
