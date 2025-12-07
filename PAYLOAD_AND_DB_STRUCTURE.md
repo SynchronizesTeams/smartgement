@@ -1,4 +1,4 @@
-# Database & Qdrant Payload Structure
+# Database Structure
 
 Unified data structure reference for Smartgement (Go Backend + Python AI Services).
 
@@ -24,7 +24,7 @@ Stores merchant/user accounts. Each user is a "merchant" who owns products.
 
 ### Table: `products`
 
-Products owned by merchants. Synced to Qdrant for semantic search.
+Products owned by merchants.
 
 | Column          | Type         | Constraints                         |
 |-----------------|--------------|-------------------------------------|
@@ -41,21 +41,6 @@ Products owned by merchants. Synced to Qdrant for semantic search.
 | updated_at      | TIMESTAMP    | ON UPDATE CURRENT_TIMESTAMP         |
 
 **Index:** `idx_products_merchant_id` on `merchant_id`
-
----
-
-### Table: `sync_jobs`
-
-Tracks product sync jobs to Qdrant.
-
-| Column      | Type         | Constraints                      |
-|-------------|--------------|----------------------------------|
-| id          | INT          | PRIMARY KEY, AUTO_INCREMENT      |
-| merchant_id | INT          | NOT NULL, FK -> users.id         |
-| job_type    | VARCHAR(50)  | NOT NULL (e.g., "full_sync")     |
-| status      | VARCHAR(50)  | NOT NULL (pending/running/done)  |
-| created_at  | TIMESTAMP    | DEFAULT CURRENT_TIMESTAMP        |
-| updated_at  | TIMESTAMP    | ON UPDATE CURRENT_TIMESTAMP      |
 
 ---
 
@@ -125,66 +110,9 @@ Detailed undo support for automation operations.
 
 ---
 
-## Qdrant Vector Database
-
-### Collection Naming Convention
-
-Each merchant has their own collection for product embeddings:
-
-```
-Collection Name: merchant_{merchant_id}_products
-Example: merchant_1_products, merchant_2_products
-```
-
-### Point Payload Structure
-
-Each Qdrant point stores product data with embeddings:
-
-```json
-{
-  "id": 1,
-  "vector": [0.123, -0.456, ...],  // 1536-dim OpenAI embedding
-  "payload": {
-    "product_id": 1,
-    "merchant_id": 1,
-    "name": "Product Name",
-    "description": "Product description text",
-    "category": "food",
-    "price": 29.99,
-    "stock": 100,
-    "ingredients": "ingredient1, ingredient2",
-    "expiration_date": "2025-12-31T00:00:00Z",
-    "created_at": "2024-01-15T10:30:00Z",
-    "updated_at": "2024-01-15T10:30:00Z"
-  }
-}
-```
-
-### Embedding Content
-
-The vector is generated from concatenated text:
-
-```
-"{name}. {description}. Category: {category}. Ingredients: {ingredients}"
-```
-
-### Collection Config
-
-```json
-{
-  "vectors": {
-    "size": 1536,
-    "distance": "Cosine"
-  }
-}
-```
-
----
-
 ## Multi-Tenant Isolation
 
 - **MySQL**: Products are isolated by `merchant_id` foreign key
-- **Qdrant**: Each merchant has a separate collection (`merchant_{id}_products`)
-- **Chatbot**: Uses `merchant_id` from request to query correct collection
+- **Chatbot**: Uses `merchant_id` from request to query correct products
 
 This ensures each merchant only sees and manages their own products.

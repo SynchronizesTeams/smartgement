@@ -34,9 +34,14 @@
       <div class="cart-panel">
         <div class="panel-header">
           <h2>Keranjang</h2>
-          <button @click="clearCart" class="btn-secondary-sm" v-if="cart.length > 0">
-            Bersihkan
-          </button>
+          <div class="flex gap-2">
+            <NuxtLink to="/history" class="btn-secondary-sm">
+              📊 Riwayat
+            </NuxtLink>
+            <button @click="clearCart" class="btn-secondary-sm" v-if="cart.length > 0">
+              Bersihkan
+            </button>
+          </div>
         </div>
 
         <div class="cart-items">
@@ -105,7 +110,80 @@
         <h2>Transaksi Berhasil!</h2>
         <p class="transaction-total">Rp{{ lastTransaction?.total_amount.toLocaleString() }}</p>
         <p class="transaction-id">ID: #{{ lastTransaction?.id }}</p>
-        <button @click="closeSuccessModal" class="btn-primary">OK</button>
+        
+        <div class="modal-actions">
+          <button @click="printReceipt" class="btn-print">🖨️ Cetak Struk</button>
+          <button @click="closeSuccessModal" class="btn-primary">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Print Receipt Modal -->
+    <div v-if="showPrintModal" class="modal-overlay" @click="closePrintModal">
+      <div class="modal-content receipt-modal" @click.stop>
+        <div id="receipt-content" class="receipt-content">
+          <!-- Receipt Header -->
+          <div class="receipt-header">
+            <h1>{{ user?.username || 'TOKO' }}</h1>
+            <p>STRUK PEMBAYARAN</p>
+          </div>
+
+          <!-- Transaction Info -->
+          <div class="receipt-info">
+            <div class="info-row">
+              <span>No. Transaksi:</span>
+              <span>#{{ lastTransaction?.id }}</span>
+            </div>
+            <div class="info-row">
+              <span>Tanggal:</span>
+              <span>{{ formatDateTime(lastTransaction?.created_at) }}</span>
+            </div>
+            <div class="info-row">
+              <span>Kasir:</span>
+              <span>{{ user?.username }}</span>
+            </div>
+            <div class="info-row">
+              <span>Pelanggan:</span>
+              <span>{{ lastTransaction?.customer_name || 'Walk-in' }}</span>
+            </div>
+          </div>
+
+          <!-- Items -->
+          <div class="receipt-items">
+            <div v-for="item in lastTransaction?.items" :key="item.id" class="receipt-item">
+              <div class="item-name-price">
+                <span>{{ item.product_name }}</span>
+                <span>Rp{{ item.subtotal.toLocaleString() }}</span>
+              </div>
+              <div class="item-qty">
+                {{ item.quantity }} x Rp{{ item.price.toLocaleString() }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Total -->
+          <div class="receipt-total">
+            <div class="total-row">
+              <span>TOTAL:</span>
+              <span>Rp{{ lastTransaction?.total_amount.toLocaleString() }}</span>
+            </div>
+            <div class="payment-method">
+              Metode: {{ getPaymentMethodLabel(lastTransaction?.payment_method) }}
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="receipt-footer">
+            <p>TERIMA KASIH</p>
+            <p>Barang yang sudah dibeli tidak dapat dikembalikan</p>
+          </div>
+        </div>
+
+        <!-- Print Buttons -->
+        <div class="print-actions">
+          <button @click="handlePrint" class="btn-print-action">🖨️ Print</button>
+          <button @click="closePrintModal" class="btn-secondary">Tutup</button>
+        </div>
       </div>
     </div>
   </div>
@@ -126,6 +204,7 @@ const customerName = ref('')
 const paymentMethod = ref('cash')
 const isProcessing = ref(false)
 const showSuccessModal = ref(false)
+const showPrintModal = ref(false)
 const lastTransaction = ref<any>(null)
 
 // Fetch products
@@ -242,7 +321,45 @@ const processTransaction = async () => {
 // Close success modal
 const closeSuccessModal = () => {
   showSuccessModal.value = false
+}
+
+// Print receipt functions
+const printReceipt = () => {
+  showSuccessModal.value = false
+  showPrintModal.value = true
+}
+
+const closePrintModal = () => {
+  showPrintModal.value = false
   lastTransaction.value = null
+}
+
+const handlePrint = () => {
+  window.print()
+}
+
+// Format datetime for receipt
+const formatDateTime = (dateString: string | undefined) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleString('id-ID', { 
+    day: '2-digit', 
+    month: '2-digit', 
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// Get payment method label
+const getPaymentMethodLabel = (method: string | undefined) => {
+  if (!method) return '-'
+  const labels: Record<string, string> = {
+    'cash': 'Tunai',
+    'card': 'Kartu',
+    'ewallet': 'E-Wallet'
+  }
+  return labels[method] || method
 }
 
 // Load products on mount

@@ -3,10 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import get_db
 from app.schemas.product import (
-    ProductCreate, ProductUpdate, ProductResponse,
-    SemanticSearchRequest, SemanticSearchResponse
+    ProductCreate, ProductUpdate, ProductResponse
 )
-from qdrant_client.models import Filter, FieldCondition, MatchValue
 from app.services import product_service
 
 router = APIRouter()
@@ -31,60 +29,6 @@ def get_products(
 
 
 
-@router.get("/qdrant", response_model=dict)
-async def get_products_from_qdrant(
-    merchant_id: str,
-    skip: int = 0,
-    limit: int = 10
-):
-    """
-    Get products directly from Qdrant for a specific merchant.
-    Returns the raw payload from the vector database.
-    """
-    from app.services.qdrant_setup import client
-    
-    collection = f"merchant_{merchant_id}"
-
-    # tambahkan filter object_type=product
-    qdrant_filter = Filter(
-        must=[
-            FieldCondition(
-                key="merchant_id",
-                match=MatchValue(value=merchant_id)
-            ),
-            FieldCondition(
-                key="object_type",
-                match=MatchValue(value="product")
-            )
-        ]
-    )
-
-    try:
-        # gunakan scroll untuk pagination data list
-        points, next_page = client.scroll(
-            collection_name=collection,
-            scroll_filter=qdrant_filter,
-            limit=limit,
-            offset=skip,
-            with_payload=True,
-            with_vectors=False
-        )
-
-        # hanya ambil payload JSON
-        results = [p.payload for p in points]
-
-        return {
-            "data": results,
-            "next_offset": next_page
-        }
-    except Exception as e:
-        # Handle case where collection might not exist
-        return {
-            "data": [],
-            "next_offset": None,
-            "message": str(e)
-        }
-
 
 @router.put("/{product_id}", response_model=ProductResponse)
 async def update_product(
@@ -108,40 +52,7 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     return None
 
 
-@router.post("/search", response_model=SemanticSearchResponse)
-async def semantic_search(
-    request: SemanticSearchRequest,
-    db: Session = Depends(get_db)
-):
-    """Semantic search for products"""
-    results = await product_service.search_products_semantic(
-        request.merchant_id,
-        request.query,
-        request.limit
-    )
-    
-    # Get full product details
-    product_ids = [r["product_id"] for r in results]
-    products = db.query(product_service.Product).filter(
-        product_service.Product.id.in_(product_ids)
-    ).all()
-    
-    # Maintain order and scores from search results
-    product_map = {p.id: p for p in products}
-    ordered_products = []
-    scores = []
-    
-    for result in results:
-        pid = result["product_id"]
-        if pid in product_map:
-            ordered_products.append(product_map[pid])
-            scores.append(result["score"])
-    
-    return SemanticSearchResponse(
-        query=request.query,
-        results=[ProductResponse.model_validate(p) for p in ordered_products],
-        scores=scores
-    )
+
 
 
 @router.get("/by-ingredient/{ingredient}", response_model=List[ProductResponse])

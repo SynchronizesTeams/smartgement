@@ -4,7 +4,6 @@ import (
 	"backend/models"
 	"backend/services"
 	"backend/utils"
-	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -83,22 +82,17 @@ func (ctrl *AuthController) Login(c *fiber.Ctx) error {
 	})
 }
 
-// GetCurrentUser returns the currently authenticated user's information
+// Loading Authorized User
 func (ctrl *AuthController) GetCurrentUser(c *fiber.Ctx) error {
-	// Get merchantID from context (set by auth middleware)
-	merchantIDStr, ok := c.Locals("merchantID").(string)
+
+	// Read user_id from JWT claims already placed in Locals() by AuthMiddleware
+	userID, ok := c.Locals("userID").(float64)
 	if !ok {
 		return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Unauthorized", nil)
 	}
 
-	// Convert merchantID to uint
-	var merchantID uint
-	if _, err := fmt.Sscanf(merchantIDStr, "%d", &merchantID); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid merchant ID", err)
-	}
-
-	// Fetch user from database
-	user, err := ctrl.service.GetUserByID(merchantID)
+	// Fetch user by ID
+	user, err := ctrl.service.GetUserByID(uint(userID))
 	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusNotFound, "User not found", err)
 	}

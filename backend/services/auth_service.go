@@ -50,8 +50,8 @@ func (s *AuthService) Login(username, password string) (string, *models.User, er
 
 	// Generate JWT
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"merchant_id": user.ID,
-		"exp":         time.Now().Add(time.Hour * 24).Unix(),
+		"user_id": user.ID,
+		"exp":     time.Now().Add(time.Hour * 24).Unix(),
 	})
 
 	jwtSecret := os.Getenv("JWT_SECRET")

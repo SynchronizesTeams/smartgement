@@ -33,7 +33,7 @@ smartgement/
 ### AI Services (Python)
 - **Framework**: FastAPI
 - **ORM**: SQLAlchemy
-- ** LLM**: OpenAI GPT-4o-mini
+- **LLM**: OpenAI GPT-4o-mini
 - **Database**: MySQL
 
 ### Frontend (Nuxt.js)
@@ -171,7 +171,6 @@ POST   /chatbot/message
 POST   /chatbot/automation/preview
 POST   /chatbot/automation/execute
 GET    /chatbot/chat/history
-POST   /chatbot/automation/sync
 GET    /risk/assess/:product_id
 GET    /risk/high-risk
 ```

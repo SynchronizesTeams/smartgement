@@ -17,7 +17,7 @@ func NewChatService(db *gorm.DB) *ChatService {
 // ProcessCommand processes chat commands (placeholder implementation)
 func (s *ChatService) ProcessCommand(merchantID string, command string) (string, error) {
 	// TODO: Implement actual chat command processing
-	// This will integrate with AI services and Qdrant for semantic search
+	// This will integrate with AI services
 	log.Printf("Processing command (placeholder) for merchant %s: %s\n", merchantID, command)
 
 	response := "Command received and will be processed. (Placeholder response)"

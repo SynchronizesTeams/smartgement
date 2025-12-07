@@ -49,12 +49,7 @@ func AuthMiddleware() fiber.Handler {
 			})
 		}
 
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid token claims",
-			})
-		}
+		claims := token.Claims.(jwt.MapClaims)
 
 		// Validate exp (token expiry)
 		if expFloat, ok := claims["exp"].(float64); ok {
@@ -70,20 +65,16 @@ func AuthMiddleware() fiber.Handler {
 			})
 		}
 
-		// Validate merchant ID & ensure correct type
-		// JWT stores numeric values as float64
-		merchantIDFloat, ok := claims["merchant_id"].(float64)
+		// Get user_id from claims (this is the actual user ID in database)
+		userIDFloat, ok := claims["user_id"].(float64)
 		if !ok {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid merchant_id format",
+				"error": "Invalid user_id format in token",
 			})
 		}
 
-		// Convert to uint for use in controllers
-		userID := uint(merchantIDFloat)
-
-		// Store as user_id to match controller expectations
-		c.Locals("user_id", userID)
+		// Store userID for use in controllers
+		c.Locals("userID", userIDFloat)
 
 		return c.Next()
 	}

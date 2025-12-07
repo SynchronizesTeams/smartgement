@@ -19,7 +19,11 @@ func NewProductController(service *services.ProductService) *ProductController {
 
 // GetProducts retrieves all products for a merchant
 func (ctrl *ProductController) GetProducts(c *fiber.Ctx) error {
-	merchantID := c.Locals("user_id").(uint)
+	userIDFloat, ok := c.Locals("userID").(float64)
+	if !ok {
+		return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Unauthorized", nil)
+	}
+	merchantID := uint(userIDFloat)
 
 	products, err := ctrl.service.GetAllProducts(merchantID)
 	if err != nil {
@@ -31,7 +35,11 @@ func (ctrl *ProductController) GetProducts(c *fiber.Ctx) error {
 
 // GetProduct retrieves a single product by ID
 func (ctrl *ProductController) GetProduct(c *fiber.Ctx) error {
-	merchantID := c.Locals("user_id").(uint)
+	userIDFloat, ok := c.Locals("userID").(float64)
+	if !ok {
+		return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Unauthorized", nil)
+	}
+	merchantID := uint(userIDFloat)
 
 	productIDStr := c.Params("id")
 	productID, err := strconv.ParseUint(productIDStr, 10, 32)
@@ -49,7 +57,11 @@ func (ctrl *ProductController) GetProduct(c *fiber.Ctx) error {
 
 // CreateProduct creates a new product
 func (ctrl *ProductController) CreateProduct(c *fiber.Ctx) error {
-	merchantID := c.Locals("user_id").(uint)
+	userIDFloat, ok := c.Locals("userID").(float64)
+	if !ok {
+		return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Unauthorized", nil)
+	}
+	merchantID := uint(userIDFloat)
 
 	var product models.Product
 	if err := c.BodyParser(&product); err != nil {
@@ -67,7 +79,11 @@ func (ctrl *ProductController) CreateProduct(c *fiber.Ctx) error {
 
 // UpdateProduct updates an existing product
 func (ctrl *ProductController) UpdateProduct(c *fiber.Ctx) error {
-	merchantID := c.Locals("user_id").(uint)
+	userIDFloat, ok := c.Locals("userID").(float64)
+	if !ok {
+		return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Unauthorized", nil)
+	}
+	merchantID := uint(userIDFloat)
 
 	productIDStr := c.Params("id")
 	productID, err := strconv.ParseUint(productIDStr, 10, 32)
@@ -89,7 +105,11 @@ func (ctrl *ProductController) UpdateProduct(c *fiber.Ctx) error {
 
 // DeleteProduct deletes a product
 func (ctrl *ProductController) DeleteProduct(c *fiber.Ctx) error {
-	merchantID := c.Locals("user_id").(uint)
+	userIDFloat, ok := c.Locals("userID").(float64)
+	if !ok {
+		return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Unauthorized", nil)
+	}
+	merchantID := uint(userIDFloat)
 
 	productIDStr := c.Params("id")
 	productID, err := strconv.ParseUint(productIDStr, 10, 32)

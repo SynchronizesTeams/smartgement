@@ -18,4 +18,6 @@ func SetupTransactionRoutes(app *fiber.App, controller *controllers.TransactionC
 	transactions.Get("/", controller.GetTransactions)
 	transactions.Get("/today", controller.GetTodaySales)
 	transactions.Get("/:id", controller.GetTransaction)
+	transactions.Put("/:id", controller.UpdateTransaction)
+	transactions.Delete("/:id", controller.CancelTransaction)
 }

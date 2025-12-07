@@ -4,10 +4,6 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Application configuration loaded from environment variables"""
     
-    # Qdrant Configuration
-    qdrant_url: str = "http://localhost:6333"
-    qdrant_api_key: str = ""
-    
     # OpenAI Configuration
     openai_api_key: str = ""
     openai_api_base: str = "https://api.openai.com/v1"

@@ -4,7 +4,6 @@ import (
 	"backend/config"
 	"backend/controllers"
 	"backend/models"
-	"backend/qdrant"
 	"backend/routes"
 	"backend/services"
 	"log"
@@ -40,9 +39,6 @@ func main() {
 		log.Fatal("Failed to run migrations:", err)
 	}
 	log.Println("Migrations completed successfully!")
-
-	// Initialize Qdrant client
-	qdrant.InitQdrant()
 
 	// Initialize Fiber app
 	app := fiber.New(fiber.Config{

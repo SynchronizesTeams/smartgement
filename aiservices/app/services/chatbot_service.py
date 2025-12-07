@@ -2,7 +2,6 @@ from sqlalchemy.orm import Session
 from typing import Dict
 from app.models.product import Product
 from app.services.llm_client import generate_text
-from app.services.rag_services import rag_answer, get_merchant_context
 from app.services.automation_service import preview_automation, execute_automation
 from app.services.risk_services import get_high_risk_products, generate_risk_report
 from app.schemas.product import ChatMessage, ChatResponse
@@ -20,8 +19,9 @@ Your capabilities:
 1. **Product CRUD**: Add, edit, delete, and list products
 2. **Automation**: Help execute bulk operations on products (delete, update stock, etc.)
 3. **Risk Analysis**: Identify high-risk products, expiring items, and business health issues
-4. **Query & Analysis**: Answer questions about products, sales, trends, and inventory
-5. **Recommendations**: Provide actionable insights based on business data
+4. **Transaction Analysis**: Summarize sales, analyze revenue trends, and provide transaction insights
+5. **Query & Analysis**: Answer questions about products, sales, trends, and inventory
+6. **Recommendations**: Provide actionable insights based on business data
 
 Guidelines:
 - Be concise and actionable
@@ -38,6 +38,7 @@ Examples of what you can do:
 - "Kosongkan semua produk yang mengandung tepung" (Automation)
 - "Produk apa yang berisiko tinggi?" (Risk Analysis)
 - "Berapa penjualan roti minggu ini?" (Query)
+- "Ringkas transaksi hari ini" (Transaction Summary)
 """
 
 
@@ -90,6 +91,10 @@ async def process_chat_message(
         )
     elif intent == "risk_report":
         response_text, suggested_actions = await _handle_risk_report(db, message.merchant_id)
+    elif intent == "transaction_summary":
+        response_text, suggested_actions = await _handle_transaction_summary(
+            db, message.merchant_id, message.message
+        )
     elif intent == "query":
         # Pass conversation context to query handler
         response_text, suggested_actions = await _handle_query(
@@ -125,10 +130,11 @@ async def classify_intent(message: str, system_prompt: str = None, conversation_
     prompt = f"""
 Classify the following message into one of these intents:
 - "add_product": User wants to add/create a new product
-- "edit_product": User wants to edit/update an existing product  
+- "edit_product": User wants to edit/update an existing product
 - "delete_product": User wants to delete/remove a product
 - "automation": User wants to perform bulk operations (delete many, update stock for many, etc.)
 - "risk_report": User asks about risks, expiring products, or problems
+- "transaction_summary": User asks for transaction summaries, sales analysis, or revenue insights
 - "query": User asks questions about products, trends, or analytics
 - "help": General help or unclear request
 
@@ -144,6 +150,8 @@ Examples:
 "Hapus produk Roti Tawar" -> {{"intent": "delete_product", "confidence": 0.95}}
 "Kosongkan semua produk yang mengandung tepung" -> {{"intent": "automation", "confidence": 0.95}}
 "Produk apa yang berisiko tinggi?" -> {{"intent": "risk_report", "confidence": 0.9}}
+"Ringkas transaksi hari ini" -> {{"intent": "transaction_summary", "confidence": 0.95}}
+"Berapa total penjualan minggu ini?" -> {{"intent": "transaction_summary", "confidence": 0.9}}
 "Berapa penjualan roti minggu ini?" -> {{"intent": "query", "confidence": 0.85}}
 
 Only return JSON, nothing else.
@@ -238,17 +246,88 @@ async def _handle_risk_report(db: Session, merchant_id: str) -> tuple[str, list[
     return (response, suggested_actions)
 
 
+async def _handle_transaction_summary(
+    db: Session,
+    merchant_id: str,
+    message: str
+) -> tuple[str, list[str]]:
+    """Handle transaction summary requests"""
+    from app.services import transaction_summary_service
+    
+    try:
+        # Analyze query to get summary
+        result = await transaction_summary_service.analyze_transaction_query(
+            db, merchant_id, message
+        )
+        
+        # Format response
+        response = f"""
+📊 **Ringkasan Transaksi**
+
+{result['summary']}
+
+**Statistik**:
+- Total Transaksi: {result['total_transactions']}
+- Total Pendapatan: Rp{result['total_revenue']:,.2f}
+- Rata-rata Transaksi: Rp{result['average_transaction']:,.2f}
+- Periode: {result['period']}
+"""
+        
+        if result['insights']:
+            response += "\n**Insights**:\n"
+            for insight in result['insights']:
+                response += f"- {insight['title']}: {insight['description']}\n"
+        
+        suggested_actions = [
+            "Lihat detail transaksi",
+            "Analisis lebih lanjut",
+            "Export laporan"
+        ]
+        
+        return (response, suggested_actions)
+        
+    except Exception as e:
+        logger.error(f"Transaction summary error: {e}")
+        return (
+            f"Maaf, gagal mengambil ringkasan transaksi. Error: {str(e)}",
+            ["Coba lagi", "Bantuan"]
+        )
+
+
 async def _handle_query(
     db: Session,
     merchant_id: str,
     message: str,
     conversation_context: str = ""
 ) -> tuple[str, list[str]]:
-    """Handle general queries using RAG with conversation context"""
+    """Handle general queries using LLM with product data from database"""
     try:
-        # Include conversation context in the query
-        full_query = conversation_context + f"\nAnswer this based on the conversation above: {message}"
-        answer = await rag_answer(merchant_id, full_query)
+        # Get recent products from database
+        from app.services.product_service import get_products
+        products = get_products(db, merchant_id, limit=20)
+        
+        # Build context from database products
+        product_context = ""
+        if products:
+            product_context = "Available products:\n"
+            for p in products:
+                product_context += f"- {p.name}: Rp {p.price:,.0f}, Stock: {p.stock}"
+                if p.description:
+                    product_context += f", {p.description}"
+                product_context += "\n"
+        else:
+            product_context = "No products in database yet.\n"
+        
+        # Build full prompt with context
+        full_prompt = f"""{conversation_context}
+
+{product_context}
+
+Based on the conversation and product data above, answer this question: {message}
+
+Answer in Indonesian (Bahasa Indonesia) and be concise and helpful."""
+        
+        answer = await generate_text(full_prompt, system_prompt=chatbot_prompt)
         suggested_actions = [
             "Analisis tren produk",
             "Cek risiko",
@@ -256,6 +335,7 @@ async def _handle_query(
         ]
         return (answer, suggested_actions)
     except Exception as e:
+        logger.error(f"Query handler error: {e}")
         return (
             f"Maaf, saya mengalami kesulitan menjawab pertanyaan tersebut. Error: {str(e)}",
             ["Coba pertanyaan lain", "Minta bantuan"]

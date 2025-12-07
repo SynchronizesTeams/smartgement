@@ -8,9 +8,6 @@ pymysql
 cryptography
 pydantic-settings
 
-# Vector Database
-qdrant-client
-
 # LLM & Embeddings
 openai
 

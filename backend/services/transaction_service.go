@@ -139,3 +139,78 @@ func (s *TransactionService) GetTodaySales(merchantID uint) (map[string]interfac
 		"date":         today,
 	}, nil
 }
+
+// UpdateTransaction updates allowed fields (notes, customer_name) of a transaction
+func (s *TransactionService) UpdateTransaction(id uint, merchantID uint, updates map[string]interface{}) error {
+	// Only allow updating specific fields
+	allowedFields := map[string]bool{
+		"notes":         true,
+		"customer_name": true,
+	}
+
+	filteredUpdates := make(map[string]interface{})
+	for key, value := range updates {
+		if allowedFields[key] {
+			filteredUpdates[key] = value
+		}
+	}
+
+	result := s.DB.Model(&models.Transaction{}).
+		Where("id = ? AND merchant_id = ?", id, merchantID).
+		Updates(filteredUpdates)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
+}
+
+// CancelTransaction cancels a transaction and restores product stock
+func (s *TransactionService) CancelTransaction(id uint, merchantID uint) error {
+	// Start transaction
+	tx := s.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Get transaction with items
+	var transaction models.Transaction
+	if err := tx.Where("id = ? AND merchant_id = ?", id, merchantID).
+		Preload("Items").
+		First(&transaction).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Check if already cancelled
+	if transaction.Status == "cancelled" {
+		tx.Rollback()
+		return gorm.ErrInvalidData
+	}
+
+	// Restore stock for each item
+	for _, item := range transaction.Items {
+		if err := tx.Model(&models.Product{}).
+			Where("id = ?", item.ProductID).
+			Update("stock", gorm.Expr("stock + ?", item.Quantity)).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// Update transaction status
+	if err := tx.Model(&transaction).
+		Update("status", "cancelled").Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
+}

@@ -97,15 +97,7 @@ def get_automation_history(
     return automation_service.get_automation_history(db, merchant_id, limit)
 
 
-@router.post("/automation/sync")
-async def sync_data(
-    merchant_id: str,
-    db: Session = Depends(get_db)
-):
-    """Sync products from DB to Qdrant"""
-    from app.services import product_service
-    count = await product_service.sync_merchant_products(db, merchant_id)
-    return {"success": True, "synced_count": count, "message": f"Synced {count} products to AI database"}
+
 
 
 @router.get("/chat/history")

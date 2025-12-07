@@ -3,6 +3,7 @@ package controllers
 import (
 	"backend/services"
 	"backend/utils"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -22,7 +23,11 @@ type CommandRequest struct {
 
 // ProcessCommand handles chat command processing
 func (ctrl *ChatController) ProcessCommand(c *fiber.Ctx) error {
-	merchantID := c.Locals("merchantID").(string)
+	userIDFloat, ok := c.Locals("userID").(float64)
+	if !ok {
+		return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Unauthorized", nil)
+	}
+	merchantID := strconv.FormatUint(uint64(userIDFloat), 10)
 
 	var req CommandRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -45,7 +50,11 @@ func (ctrl *ChatController) ProcessCommand(c *fiber.Ctx) error {
 
 // GetChatHistory retrieves chat history for the merchant
 func (ctrl *ChatController) GetChatHistory(c *fiber.Ctx) error {
-	merchantID := c.Locals("merchantID").(string)
+	userIDFloat, ok := c.Locals("userID").(float64)
+	if !ok {
+		return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Unauthorized", nil)
+	}
+	merchantID := strconv.FormatUint(uint64(userIDFloat), 10)
 
 	limit := c.QueryInt("limit", 50)
 	if limit > 100 {
