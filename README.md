@@ -12,6 +12,26 @@ Sistem manajemen produk pintar untuk UMKM dengan AI chatbot, automasi, dan anali
 - **Authentication**: Protected routes, user management
 - **Profile Management**: Edit profil dan ubah password
 
+## 📸 Project Screenshots
+
+### Landing Page
+![Landing Page](project-screenshots/landing-page.png)
+
+### Application Features
+![App Features](project-screenshots/app-features.png)
+
+### Product Management
+![Product Management Page](project-screenshots/product-management-page.png)
+![Product List](project-screenshots/product-list.png)
+
+### Transaction & POS
+![Transaction POS Page](project-screenshots/transaction-POS-page.png)
+![Receipt Transactions](project-screenshots/receipt-transactions.png)
+
+### AI Chatbot & Automation
+![Automation Chat Display Product](project-screenshots/automation-chat-display-product.png)
+![Transaction AI Summary](project-screenshots/transaction-ai-summary.png)
+
 ##  Project Structure
 
 ```
