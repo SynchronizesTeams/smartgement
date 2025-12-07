@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Text, ForeignKey, Date, JSON
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.mysql import INTEGER
+from sqlalchemy.dialects.mysql import INTEGER, BIGINT
 from datetime import datetime
 from app.database import Base
 
@@ -11,8 +11,8 @@ class Product(Base):
     __table_args__ = {'extend_existing': True}
     
     # Use MySQL specific INTEGER(unsigned=True) to match Go's uint
-    id = Column(INTEGER(unsigned=True), primary_key=True, index=True)
-    merchant_id = Column(INTEGER(unsigned=True), index=True, nullable=False)
+    id = Column(BIGINT(unsigned=True), primary_key=True, index=True)
+    merchant_id = Column(BIGINT(unsigned=True), index=True, nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text)
     stock = Column(Integer, default=0)
@@ -31,50 +31,40 @@ class Product(Base):
 
 
 class ProductTrend(Base):
-    """Product trend data for demand analysis"""
     __tablename__ = "product_trends"
     
-    id = Column(Integer, primary_key=True, index=True)
-    # Match unsigned int from Product
-    product_id = Column(INTEGER(unsigned=True), ForeignKey("products.id"), nullable=False)
+    id = Column(BIGINT(unsigned=True), primary_key=True, index=True)
+    product_id = Column(BIGINT(unsigned=True), ForeignKey("products.id"), nullable=False)
     date = Column(Date, nullable=False, index=True)
-    
-    # Sales metrics
+
     quantity_sold = Column(Integer, default=0)
     revenue = Column(Float, default=0.0)
     views = Column(Integer, default=0)
     popularity_score = Column(Float, default=0.0)
-    
-    # Additional context
+
     meta_data = Column(JSON, nullable=True)
-    
     created_at = Column(DateTime, default=datetime.utcnow)
-    
-    # Relationships
+
     product = relationship("Product", back_populates="trends")
 
 
+
 class ProductRisk(Base):
-    """Risk assessment records for products"""
     __tablename__ = "product_risks"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    # Match unsigned int from Product
-    product_id = Column(INTEGER(unsigned=True), ForeignKey("products.id"), nullable=False)
-    
-    # Risk information
+
+    id = Column(BIGINT(unsigned=True), primary_key=True, index=True)
+    product_id = Column(BIGINT(unsigned=True), ForeignKey("products.id"), nullable=False)
+
     risk_type = Column(String(50), nullable=False)
     risk_level = Column(String(20), nullable=False)
     risk_score = Column(Float, default=0.0)
     reason = Column(Text)
-    
-    # Recommendations
+
     recommendation = Column(Text)
-    
     calculated_at = Column(DateTime, default=datetime.utcnow)
-    
-    # Relationships
+
     product = relationship("Product", back_populates="risks")
+
 
 
 class AutomationHistory(Base):
