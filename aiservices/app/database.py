@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 # MySQL connection - hardcoded for local development
 # Database: smartgement, User: root, No password
-DATABASE_URL = "mysql+pymysql://root:@127.0.0.1:3306/smartgement"
+DATABASE_URL = "mysql+pymysql://root:himro3344@127.0.0.1:3306/smartgement"
 
 # Create SQLAlchemy engine
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
