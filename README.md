@@ -89,7 +89,7 @@ python run_server.py
 ### 4. Frontend (Nuxt)
 
 ```bash
-cd frontend/smartgement-fe
+cd smartgement-fe
 npm install
 npm run dev
 ```
