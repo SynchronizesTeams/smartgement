@@ -12,7 +12,7 @@ Sistem manajemen produk pintar untuk UMKM dengan AI chatbot, automasi, dan anali
 - **Authentication**: Protected routes, user management
 - **Profile Management**: Edit profil dan ubah password
 
-## 📸 Project Screenshots
+##  Project Screenshots
 
 ### Landing Page
 ![Landing Page](project-screenshots/landing-page.png)
@@ -68,7 +68,7 @@ smartgement/
 - **Node.js** 18+
 - **MySQL** 8.0+
 
-## 🔧 Installation
+##  Installation
 
 ### 1. Database Setup
 
@@ -275,7 +275,7 @@ $body = @{ merchant_id = "1"; message = "Tampilkan produk" } | ConvertTo-Json
 Invoke-RestMethod -Uri "http://localhost:8000/chatbot/message" -Method POST -Body $body -ContentType "application/json"
 ```
 
-## � Database Schema
+##  Database Schema
 
 ### Products
 ```sql
