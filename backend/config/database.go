@@ -1,33 +1,26 @@
 package config
 
 import (
-	"fmt"
 	"log"
-	"os"
 
-	"gorm.io/driver/postgres"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 var DB *gorm.DB
 
-func InitDatabase() {
-	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Jakarta",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASS"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_PORT"),
-	)
+// MySQL connection - hardcoded for local development
+// Database: smartgement, User: root, No password
+const DSN = "root:@tcp(127.0.0.1:3306)/smartgement?charset=utf8mb4&parseTime=True&loc=Local"
 
+func InitDatabase() {
 	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	DB, err = gorm.Open(mysql.Open(DSN), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		log.Fatal("Failed to connect to MySQL database:", err)
 	}
 
-	log.Println("Database connected successfully!")
+	log.Println("MySQL database connected successfully!")
 }
 
 func GetDB() *gorm.DB {

@@ -4,6 +4,8 @@ uvicorn[standard]
 
 # Database
 sqlalchemy
+pymysql
+cryptography
 pydantic-settings
 
 # Vector Database

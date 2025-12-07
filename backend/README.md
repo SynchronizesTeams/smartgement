@@ -85,7 +85,7 @@ backend/
 ### Prerequisites
 
 - Go 1.22 or higher
-- PostgreSQL database
+- Supabase account and project (or local PostgreSQL for development)
 - Qdrant (optional, for future semantic search)
 
 ### Installation
@@ -100,26 +100,30 @@ backend/
    cp .env.example .env
    ```
    
-   Edit `.env` with your database credentials:
+   Edit `.env` with your **Supabase credentials**:
    ```env
-   DB_HOST=localhost
-   DB_USER=postgres
-   DB_PASS=yourpassword
-   DB_NAME=merchant_db
-   DB_PORT=5432
+   # Get these from your Supabase project dashboard
+   SUPABASE_PROJECT_URL=https://your-project-ref.supabase.co
+   SUPABASE_API_KEY=your-supabase-anon-key
+   SUPABASE_DB_URL=postgresql://postgres:[YOUR-PASSWORD]@db.your-project-ref.supabase.co:5432/postgres
+   
    JWT_SECRET=yourSecretKey
    QDRANT_URL=http://localhost:6333
+   PORT=3000
    ```
+
+   **Where to find Supabase credentials:**
+   - Go to your Supabase project dashboard
+   - **Project URL**: Settings → API → Project URL
+   - **API Key**: Settings → API → anon/public key
+   - **Database URL**: Settings → Database → Connection String → URI
 
 3. **Install dependencies** (already done during setup):
    ```bash
    go mod tidy
    ```
 
-4. **Create PostgreSQL database**:
-   ```sql
-   CREATE DATABASE merchant_db;
-   ```
+4. **No database creation needed** - Supabase automatically provisions your PostgreSQL database!
 
 ### Running the Server
 
@@ -129,7 +133,12 @@ Start the development server:
 cd backend && go run cmd/main.go
 ```
 
-The server will start on port **3000** by default. Auto-migrations will run automatically on startup.
+The server will start on port **3000** by default. Auto-migrations will run automatically on startup and create the necessary tables in your Supabase database.
+
+### Prerequisites Before Running
+1. Configure `.env` file with Supabase credentials
+2. Ensure your Supabase project is active
+3. Database tables will be created automatically via AutoMigrate
 
 ### Building for Production
 

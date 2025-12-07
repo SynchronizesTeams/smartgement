@@ -116,6 +116,7 @@ class ChatMessage(BaseModel):
     """Chat message from user"""
     merchant_id: str
     message: str
+    conversation_history: Optional[List[dict]] = None  # Last N messages for context
     context: Optional[dict] = None
 
 
@@ -125,6 +126,7 @@ class ChatResponse(BaseModel):
     intent: str  # "query", "automation", "report", "help"
     confidence: float
     suggested_actions: Optional[List[str]] = None
+    context: Optional[dict] = None
 
 
 # ===== Automation Schemas =====

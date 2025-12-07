@@ -13,6 +13,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/joho/godotenv"
 )
 
@@ -28,7 +29,14 @@ func main() {
 
 	// Run migrations
 	log.Println("Running database migrations...")
-	if err := db.AutoMigrate(&models.User{}, &models.Product{}, &models.SyncJob{}); err != nil {
+	if err := db.AutoMigrate(
+		&models.User{},
+		&models.Product{},
+		&models.SyncJob{},
+		&models.AutomationLog{},
+		&models.Transaction{},
+		&models.TransactionItem{},
+	); err != nil {
 		log.Fatal("Failed to run migrations:", err)
 	}
 	log.Println("Migrations completed successfully!")
@@ -43,6 +51,7 @@ func main() {
 
 	// Middleware
 	app.Use(logger.New())
+	app.Use(requestid.New())
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
@@ -57,21 +66,27 @@ func main() {
 	})
 
 	// Initialize services
+	authService := services.NewAuthService(db)
 	productService := services.NewProductService(db)
 	chatService := services.NewChatService(db)
+	transactionService := services.NewTransactionService(db)
 
 	// Initialize controllers
+	authController := controllers.NewAuthController(authService)
 	productController := controllers.NewProductController(productService)
 	chatController := controllers.NewChatController(chatService)
+	transactionController := controllers.NewTransactionController(transactionService)
 
 	// Setup routes
+	routes.SetupAuthRoutes(app, authController)
 	routes.SetupProductRoutes(app, productController)
 	routes.SetupChatRoutes(app, chatController)
+	routes.SetupTransactionRoutes(app, transactionController)
 
 	// Start server
 	port := os.Getenv("PORT")
-	if port == "" {
-		port = "3000"
+	if port == "" || port == "3000" {
+		port = "8080"
 	}
 
 	log.Printf("Server starting on port %s...", port)

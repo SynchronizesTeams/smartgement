@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Text, ForeignKey, Date, JSON
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.mysql import INTEGER
 from datetime import datetime
 from app.database import Base
 
@@ -7,16 +8,18 @@ from app.database import Base
 class Product(Base):
     """Product model for storing product information"""
     __tablename__ = "products"
+    __table_args__ = {'extend_existing': True}
     
-    id = Column(Integer, primary_key=True, index=True)
-    merchant_id = Column(String, index=True, nullable=False)
-    name = Column(String, nullable=False)
+    # Use MySQL specific INTEGER(unsigned=True) to match Go's uint
+    id = Column(INTEGER(unsigned=True), primary_key=True, index=True)
+    merchant_id = Column(INTEGER(unsigned=True), index=True, nullable=False)
+    name = Column(String(255), nullable=False)
     description = Column(Text)
     stock = Column(Integer, default=0)
     price = Column(Float, default=0.0)
-    ingredients = Column(Text)  # Comma-separated or JSON
+    ingredients = Column(Text)
     expiration_date = Column(DateTime, nullable=True)
-    category = Column(String, nullable=True)
+    category = Column(String(100), nullable=True)
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -32,7 +35,8 @@ class ProductTrend(Base):
     __tablename__ = "product_trends"
     
     id = Column(Integer, primary_key=True, index=True)
-    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    # Match unsigned int from Product
+    product_id = Column(INTEGER(unsigned=True), ForeignKey("products.id"), nullable=False)
     date = Column(Date, nullable=False, index=True)
     
     # Sales metrics
@@ -42,7 +46,7 @@ class ProductTrend(Base):
     popularity_score = Column(Float, default=0.0)
     
     # Additional context
-    meta_data = Column(JSON, nullable=True)  # For storing extra contextual data
+    meta_data = Column(JSON, nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow)
     
@@ -55,12 +59,13 @@ class ProductRisk(Base):
     __tablename__ = "product_risks"
     
     id = Column(Integer, primary_key=True, index=True)
-    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    # Match unsigned int from Product
+    product_id = Column(INTEGER(unsigned=True), ForeignKey("products.id"), nullable=False)
     
     # Risk information
-    risk_type = Column(String, nullable=False)  # e.g., "expiration", "stock", "trend", "financial"
-    risk_level = Column(String, nullable=False)  # e.g., "low", "medium", "high", "critical"
-    risk_score = Column(Float, default=0.0)  # Numerical score 0-100
+    risk_type = Column(String(50), nullable=False)
+    risk_level = Column(String(20), nullable=False)
+    risk_score = Column(Float, default=0.0)
     reason = Column(Text)
     
     # Recommendations
@@ -77,15 +82,31 @@ class AutomationHistory(Base):
     __tablename__ = "automation_history"
     
     id = Column(Integer, primary_key=True, index=True)
-    merchant_id = Column(String, index=True, nullable=False)
+    merchant_id = Column(String(50), index=True, nullable=False)
     
     # Operation details
-    operation_type = Column(String, nullable=False)  # e.g., "bulk_update_stock", "bulk_delete"
-    command = Column(Text)  # Original command from user
-    affected_product_ids = Column(JSON)  # List of product IDs affected
+    operation_type = Column(String(50), nullable=False)
+    command = Column(Text)
+    affected_product_ids = Column(JSON)
     
     # State before operation (for undo)
-    previous_state = Column(JSON)  # Stores previous values
+    previous_state = Column(JSON)
     
     executed_at = Column(DateTime, default=datetime.utcnow)
-    executed_by = Column(String, default="chatbot")
+    executed_by = Column(String(50), default="chatbot")
+
+
+class ChatHistory(Base):
+    """Chat conversation history"""
+    __tablename__ = "chat_history"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    merchant_id = Column(String(50), index=True, nullable=False)
+    
+    # Message details
+    user_message = Column(Text, nullable=False)
+    ai_response = Column(Text)
+    intent = Column(String(50))
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)

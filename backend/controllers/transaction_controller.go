@@ -1,0 +1,108 @@
+package controllers
+
+import (
+	"backend/models"
+	"backend/services"
+	"strconv"
+
+	"github.com/gofiber/fiber/v2"
+)
+
+type TransactionController struct {
+	Service *services.TransactionService
+}
+
+func NewTransactionController(service *services.TransactionService) *TransactionController {
+	return &TransactionController{Service: service}
+}
+
+// CreateTransaction creates a new transaction
+func (c *TransactionController) CreateTransaction(ctx *fiber.Ctx) error {
+	// Get merchant ID from context (set by auth middleware)
+	userID := ctx.Locals("user_id")
+	if userID == nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized: user_id not found in context",
+		})
+	}
+
+	merchantID, ok := userID.(uint)
+	if !ok {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid user_id format",
+		})
+	}
+
+
+	var transaction models.Transaction
+	if err := ctx.BodyParser(&transaction); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	result, err := c.Service.CreateTransaction(merchantID, &transaction)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusCreated).JSON(result)
+}
+
+// GetTransactions retrieves all transactions for a merchant
+func (c *TransactionController) GetTransactions(ctx *fiber.Ctx) error {
+	merchantID := ctx.Locals("user_id").(uint)
+
+	limit, _ := strconv.Atoi(ctx.Query("limit", "20"))
+	offset, _ := strconv.Atoi(ctx.Query("offset", "0"))
+
+	transactions, total, err := c.Service.GetTransactions(merchantID, limit, offset)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"data":   transactions,
+		"total":  total,
+		"limit":  limit,
+		"offset": offset,
+	})
+}
+
+// GetTransaction retrieves a single transaction
+func (c *TransactionController) GetTransaction(ctx *fiber.Ctx) error {
+	merchantID := ctx.Locals("user_id").(uint)
+	id, err := strconv.ParseUint(ctx.Params("id"), 10, 32)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid transaction ID",
+		})
+	}
+
+	transaction, err := c.Service.GetTransaction(uint(id), merchantID)
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Transaction not found",
+		})
+	}
+
+	return ctx.JSON(transaction)
+}
+
+// GetTodaySales retrieves today's sales summary
+func (c *TransactionController) GetTodaySales(ctx *fiber.Ctx) error {
+	merchantID := ctx.Locals("user_id").(uint)
+
+	summary, err := c.Service.GetTodaySales(merchantID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.JSON(summary)
+}

@@ -1,12 +1,12 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from app.config import settings
+
+# MySQL connection - hardcoded for local development
+# Database: smartgement, User: root, No password
+DATABASE_URL = "mysql+pymysql://root:@127.0.0.1:3306/smartgement"
 
 # Create SQLAlchemy engine
-engine = create_engine(
-    settings.database_url,
-    connect_args={"check_same_thread": False} if "sqlite" in settings.database_url else {}
-)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 # Session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

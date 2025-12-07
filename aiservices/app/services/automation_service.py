@@ -1,10 +1,30 @@
 from sqlalchemy.orm import Session
 from typing import List, Dict, Optional
 from datetime import datetime
-from app.models.product import Product, AutomationHistory
-from app.services.product_service import search_products_semantic, get_products_by_ingredient
+from app.models.product import Product, AutomationHistory, ChatHistory
+from app.services.product_service import get_products_by_ingredient
 from app.services.llm_client import generate_text
 import json
+from jsonschema import validate, ValidationError
+
+automation_schema = {
+    "type": "object",
+    "properties": {
+        "action": {"type": "string", "enum": ["empty_stock", "update_stock", "delete", "add_product", "edit_product"]},
+        "filters": {
+            "type": "object",
+            "properties": {
+                "search_query": {"type": "string"},
+                "ingredient": {"type": "string"},
+                "description": {"type": "string"}
+            },
+            "required": ["description"]
+        },
+        "new_stock": {"type": "number"},
+        "product_data": {"type": "object"}
+    },
+    "required": ["action", "filters"]
+}
 
 
 async def preview_automation(
@@ -232,49 +252,17 @@ Only return the JSON, nothing else.
             response = response.replace("```json", "").replace("```", "").strip()
         
         parsed = json.loads(response)
+        validate(parsed, automation_schema)
         parsed["success"] = True
         return parsed
-    except Exception as e:
+
+    except (json.JSONDecodeError, ValidationError) as e:
         return {
             "success": False,
-            "error": f"Failed to parse command: {str(e)}"
+            "error": f"Invalid LLM output: {str(e)}"
         }
 
 
-async def _find_affected_products(
-    db: Session,
-    merchant_id: str,
-    filters: Dict
-) -> List[Product]:
-    """Find products matching the filters"""
-    affected = []
-    
-    # Try semantic search first
-    if "search_query" in filters:
-        search_results = await search_products_semantic(
-            merchant_id=merchant_id,
-            query=filters["search_query"],
-            limit=50
-        )
-        
-        product_ids = [r["product_id"] for r in search_results if r["score"] > 0.6]
-        affected = db.query(Product).filter(
-            Product.id.in_(product_ids),
-            Product.merchant_id == merchant_id
-        ).all()
-    
-    # Also try ingredient filter
-    if "ingredient" in filters and not affected:
-        affected = get_products_by_ingredient(
-            db=db,
-            merchant_id=merchant_id,
-            ingredient=filters["ingredient"]
-        )
-    
-    return affected
-
-
-async def _extract_stock_value(command: str) -> int:
     """Extract stock value from command if updating stock"""
     # Simple extraction - look for numbers
     import re
